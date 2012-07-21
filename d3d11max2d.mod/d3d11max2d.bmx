@@ -1260,7 +1260,7 @@ EndFunction
 
 '----------- Extra Max2D functionality -----------
 Function PlotPoints(points#[])
-	VerifyD3D11Max2DDriver
+	If Not VerifyD3D11Max2DDriver() Return
 	If points.length<2 Or (points.length&1) Return
 	
 	Local buildbuffer = False
@@ -1305,7 +1305,7 @@ Function PlotPoints(points#[])
 EndFunction
 
 Function DrawLines(lines#[],Linked=False)
-	VerifyD3D11Max2DDriver
+	If Not VerifyD3D11Max2DDriver() Return
 	If lines.length<4 Or (lines.length&1) Return
 	If linked And (lines.length Mod 4) Return
 	
@@ -1354,7 +1354,7 @@ Function DrawLines(lines#[],Linked=False)
 EndFunction
 
 Function DrawImageTiled(image:TImage,x#=0,y#=0,frame=0)
-	VerifyD3D11Max2DDriver
+	If Not VerifyD3D11Max2DDriver() Return
 	
 	Local iframe:TD3D11ImageFrame=TD3D11ImageFrame(image.Frame(frame))
 	If Not iframe Return
@@ -1461,17 +1461,17 @@ Function DrawImageTiled(image:TImage,x#=0,y#=0,frame=0)
 EndFunction
 
 Function SetScreenRotationD3D11(rot#)
-	VerifyD3D11Max2DDriver()
+	If Not VerifyD3D11Max2DDriver() Return
 	_driver.SetScreenRotation rot
 End Function
 
 Function SetScreenZoomD3D11(zoom#)
-	VerifyD3D11Max2DDriver
+	If Not VerifyD3D11Max2DDriver() Return
 	_driver.SetZoom zoom
 End Function
 
 Function SetScreenFocusD3D11(x#,y#)
-	VerifyD3D11Max2DDriver
+	If Not VerifyD3D11Max2DDriver() Return
 	_driver.SetFocus x,y
 End Function
 ? 'WIN32
