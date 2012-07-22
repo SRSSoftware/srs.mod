@@ -76,7 +76,7 @@ Function CreateD3D11Device()
 		
 	Local CreationFlag = D3D11_CREATE_DEVICE_SINGLETHREADED
 	'?DEBUG
-		CreationFlag :| D3D11_CREATE_DEVICE_DEBUG
+	'	CreationFlag :| D3D11_CREATE_DEVICE_DEBUG
 	'?
 	If D3D11CreateDevice(Null,D3D_DRIVER_TYPE_HARDWARE,Null,CreationFlag,Null,0,D3D11_SDK_VERSION,_d3d11dev,_featurelevel,_d3d11devcon)<0
 		Throw "Critical Error!~nCannot create D3D11Device"
