@@ -31,7 +31,7 @@ Function Dx11Max2D_EnumDisplaySettings(iModeNum,pMode:Byte Ptr)
 EndExtern
 
 'Lag fix
-Global _DwmapiDLL = LoadLibraryA("dwmapi.dll")
+Global _DwmapiDLL = LoadLibraryA("dwmapi.dll") 
 
 Global _FlushGPU()
 If _DwmapiDLL _FlushGPU = GetProcAddress(_DwmapiDLL,"DwmFlush")
