@@ -8,7 +8,8 @@ ModuleInfo "License: SRS Shared Source Code License"
 ModuleInfo "Copyright: SRS Software"
 ModuleInfo ""
 ModuleInfo "BUGFIXES:"
-ModuleInfo "Fixed up a work-around so as not to use the bugged IDXGIAdapter.CheckSupportedInterfaces"
+ModuleInfo "Fixed up some drivers not returning all display modes on HDTVs, removed dead code"
+ModuleInfo "Fixed up a work-around so as Not To use the bugged IDXGIAdapter.CheckSupportedInterfaces"
 ModuleInfo "Fixed available graphic modes should not work on Dx9"
 ModuleInfo "Fixed fullscreen selecting correct parameters"
 ModuleInfo "Fixed image scaling bug"
@@ -21,8 +22,14 @@ Import BRL.Retro
 Import SRS.DirectX11
 
 ?Win32
+Import "DeviceModeSettings.c"
 
 Private
+
+Extern
+Function Dx11Max2D_EnumDisplaySettings(iModeNum,pMode:Byte Ptr)
+EndExtern
+
 'Lag fix
 Global _DwmapiDLL = LoadLibraryA("dwmapi.dll")
 
@@ -34,7 +41,6 @@ Global _graphics:TD3D11Graphics
 Global _driver:TD3D11GraphicsDriver
 Global _wndclass$ = "BBDX11Device Window Class"
 
-Global _displaymodes:DXGI_MODE_DESC[]
 Global _modes:TGraphicsMode[]
 Global _d3d11dev:ID3D11Device
 Global _d3d11devcon:ID3D11DeviceContext
@@ -59,12 +65,7 @@ Function D3D11WndProc( hwnd,MSG,wp,lp )"win32"
 		Case WM_SYSKEYDOWN
 			If wp<>KEY_F4 Return
 		Case WM_SIZE	
-			'Local w = lp & $ffff
-			'Local h = lp Shr 16
-			'WriteStdout w+","+h+"~n"
-			'If _swapchain
-			'EndIf
-	EndSelect
+			EndSelect
 	Return DefWindowProcW( hwnd,MSG,wp,lp )
 End Function
 
@@ -269,7 +270,7 @@ Type TD3D11Graphics Extends TGraphics
 	EndMethod
 	
 	Method CreateSwapChain(hwnd,width,height,depth,hertz,flags)
-		Local FullScreenTarget:DXGI_MODE_DESC
+		Local FullScreenTarget:TGraphicsMode
 		Local numerator = 0
 
 		If depth
@@ -279,7 +280,8 @@ Type TD3D11Graphics Extends TGraphics
 					If height = i.height
 						If depth = i.depth
 							If hertz = i.hertz
-								FullScreenTarget = _displaymodes[index]
+								FullScreenTarget = _modes[index]
+								Exit
 							EndIf
 						EndIf
 					EndIf
@@ -290,16 +292,16 @@ Type TD3D11Graphics Extends TGraphics
 		EndIf
 
 		_sd = New DXGI_SWAP_CHAIN_DESC
-		_sd.BufferCount = 1	'MSDN conflicting information on this parameter
+		_sd.BufferCount = 1 'MSDN conflicting information on this parameter
 		_sd.BufferDesc_Width = width
 		_sd.BufferDesc_Height = height
 	
 		If depth And FullScreenTarget
-			_sd.BufferDesc_Format = FullscreenTarget.Format
-			_sd.BufferDesc_RefreshRate_Numerator = FullscreenTarget.RefreshRate_Numerator
-			_sd.BufferDesc_RefreshRate_Denominator = FullscreenTarget.RefreshRate_Denominator
-			_sd.BufferDesc_Scaling = 0'FullscreenTarget.Scaling
-			_sd.BufferDesc_ScanlineOrdering = 0'FullscreenTarget.ScanlineOrdering
+			_sd.BufferDesc_Format = DXGI_FORMAT_R8G8B8A8_UNORM
+			_sd.BufferDesc_RefreshRate_Numerator = FullscreenTarget.Hertz
+			_sd.BufferDesc_RefreshRate_Denominator = 1
+			_sd.BufferDesc_Scaling = 0
+			_sd.BufferDesc_ScanlineOrdering = 0
 		Else
 			_sd.BufferDesc_Format = DXGI_FORMAT_R8G8B8A8_UNORM 'Standard 32bit display
 			_sd.BufferDesc_RefreshRate_Numerator = 0
@@ -307,7 +309,7 @@ Type TD3D11Graphics Extends TGraphics
 			_sd.BufferDesc_Scaling = 0
 			_sd.BufferDesc_ScanlineOrdering = 0
 		EndIf
-		
+
 		If depth
 			_sd.Windowed = False
 		Else
@@ -398,107 +400,50 @@ Type TD3D11GraphicsDriver Extends TGraphicsDriver
 		If Not _d3d11 Return Null
 		If Not _DXGI Return Null
 		If Not _d3dcompiler Return Null
-		
+
 		'BUG FIX -	There's a bug in IDXGIAdapter.CheckInterfaceSupport incorrectly returning
 		'			that some valid DX11 cards don't support DX11.
-		_SupportLevels = [D3D_FEATURE_LEVEL_11_0,D3D_FEATURE_LEVEL_10_1,D3D_FEATURE_LEVEL_10_0]
-		
+		_SupportLevels = [D3D_FEATURE_LEVEL_11_1,D3D_FEATURE_LEVEL_11_0,D3D_FEATURE_LEVEL_10_1,D3D_FEATURE_LEVEL_10_0]
 		If D3D11CreateDevice(Null,D3D_DRIVER_TYPE_HARDWARE,Null,D3D11_CREATE_DEVICE_SINGLETHREADED,..
-							_SupportLevels,3,D3D11_SDK_VERSION,_d3d11dev,Varptr _featureLevel[0],_d3d11devcon)<0
+							_SupportLevels,4,D3D11_SDK_VERSION,_d3d11dev,Varptr _featureLevel[0],_d3d11devcon)<0
 			Return Null
 		EndIf
 		
-		'Now get the IDXGIDevice
-		If _d3d11dev.QueryInterface(IID_IDXGIDevice,Varptr _Device)<0
-			Throw "BUGFIX work-around: Error getting IDXGIDevice!"
-		EndIf
+		'Use the native Windows API to get the correct number of display modes available
+		'Dx11 API is inconsistent with HDTVs
+		Local Mode[4]
+		Local ModeNum,Result = -1
 		
-		'Now we're back to the _Adapter :-
-		If _Device.GetParent(IID_IDXGIAdapter,_Adapter)<0
-			Throw "BUGFIX work-around: Error getting IDXGIAdapter!"
-		EndIf
-		
-		Rem
-		If CreateDXGIFactory(IID_IDXGIFactory,_Factory)<0
-			Throw "Error creating IDXGIFactory!"
-		EndIf
-		
-		'TODO: Multiple GPUs?
-		If _Factory.EnumAdapters(0,_Adapter)<0
-			Throw "Error enumerating GPUs!"
-		EndIf
-
-		'Check for support of Dx10/11
-		_featurelevel[0] = D3D_FEATURE_LEVEL_11_0
-		If _Adapter.CheckInterfaceSupport(IID_ID3D11DEVICE,Null)<0
-			_featurelevel[0] = D3D_FEATURE_LEVEL_10_1
-			If _Adapter.CheckInterfaceSupport(IID_ID3D10DEVICE1,Null)<0
-				_featurelevel[0] = D3D_FEATURE_LEVEL_10_0
-				If _Adapter.CheckInterfaceSupport(IID_ID3D10DEVICE,Null)<0
-					_featurelevel[0] = 0
-					Return Null
-				EndIf
-			EndIf
-		EndIf
-		EndRem
-		
-		'TODO: Each GPU may have multiple outputs?
-		If _Adapter.EnumOutputs(0,_Output)<0
-			Throw "Error enumerating graphic outputs!"
-		EndIf
-
-		'16bit modes - EXPERIMENTAL - NOT WORKING!
-		Local nummodes16
-		Local nummodes32
-		Local totalmodes
-		
-		Local Format16Bit = -1'DXGI_FORMAT_??????
-		Local Format32Bit = DXGI_FORMAT_R8G8B8A8_UNORM
-		
-		If _Output.GetDisplaymodeList(Format16Bit,0,nummodes16,Null)<0
-			Throw "Error getting number of 16bit graphics modes!"
-		EndIf
-		
-		If _Output.GetDisplaymodeList(Format32Bit,0,nummodes32,Null)<0
-			Throw "Error getting number of 32bit graphics modes!"
-		EndIf
-		
-		totalmodes = nummodes16 + nummodes32
-		
-		Local modesptr:Byte Ptr=MemAlloc(SizeOf(DXGI_MODE_DESC)*totalmodes)
-		Local modesptr32:Byte Ptr = modesptr + (SizeOf(DXGI_MODE_DESC)*nummodes16) 'index into where the 32bit modes are
-		
-		_Output.GetDisplaymodeList(Format16Bit,DXGI_ENUM_MODES_INTERLACED,nummodes16,modesptr)
-		_Output.GetDisplaymodeList(Format32Bit,DXGI_ENUM_MODES_INTERLACED,nummodes32,modesptr32)
-
-		_Displaymodes = _Displaymodes[..totalmodes]
-		_modes=New TGraphicsMode[totalmodes]
-
-		For Local i = 0 Until totalmodes
-			_Displaymodes[i] = New DXGI_MODE_DESC
-			MemCopy _Displaymodes[i],modesptr+(SizeOf( DXGI_MODE_DESC) * i),SizeOf(DXGI_MODE_DESC)
-		Next
-
-		For Local i = 0 Until totalmodes
-			_modes[i] = New TGraphicsMode
-
-			_modes[i].width = _Displaymodes[i].Width
-			_modes[i].height = _Displaymodes[i].Height
-			_modes[i].hertz = _Displaymodes[i].RefreshRate_Numerator/_Displaymodes[i].RefreshRate_Denominator
+		While Result <> 0
+			Local ModeFound = False	
+			Result = Dx11Max2D_EnumDisplaySettings(ModeNum,Mode)
 			
-			If _Displaymodes[i].Format = Format16Bit
-				_modes[i].depth = 16
-			Else
-				_modes[i].depth = 32
-			EndIf
-		Next
+			'Don't include duplicates
+			For Local GMode:TGraphicsMode = EachIn _modes
+				If (Mode[0] = GMode.Width) And (Mode[1] = GMode.Height) ..
+					And (Mode[2] = GMode.Depth) And (Mode[3] = GMode.Hertz)
+			
+					ModeFound = True
+					ModeNum :+ 1
+					Exit
+				EndIf
+			Next
 
-		MemFree modesptr
+			If Not ModeFound	
+				_modes = _modes[.._modes.Length + 1]
+				_modes[_modes.Length-1] = New TGraphicsMode
+
+				Local AllModes:TGraphicsMode[] = _modes
+				
+				_modes[_modes.Length-1].Width = Mode[0]
+				_modes[_modes.Length-1].Height = Mode[1]
+				_modes[_modes.Length-1].Depth = Mode[2]
+				_modes[_modes.Length-1].Hertz = Mode[3]
 		
-		If _Output _Output.Release_
-		If _Adapter _Adapter.Release_
-		If _Factory _Factory.Release_
-		
+				ModeNum :+ 1
+			EndIf
+		Wend
+
 		'BUGFIX:
 		'Part of IDXGIAdapter.CheckInterfaceSupport work-around
 		If _Device _Device.Release_
@@ -542,9 +487,7 @@ Type TD3D11GraphicsDriver Extends TGraphicsDriver
 		_graphics.Flip( sync )
 		
 		'Render lag fix
-		If _windowed
-			'If _DwmapiDLL _FlushGPU
-		Else
+		If Not _windowed
 			_d3d11devcon.End_(_query)
 			Local queryData:Int
 			While _d3d11devcon.GetData(_query,Varptr queryData,SizeOf(queryData),0)<>0
