@@ -1226,10 +1226,10 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 	EndMethod
 
 	Method SetResolution( w#,h# )
-		_matrixproj = [2.0/w,0.0,0.0,-1-(1.0/w)+(1.0/w),..
-						0.0,-2.0/h,0.0,1+(1.0/h)-(1.0/h),..
-						0.0,0.0,1.0,0.0,..
-						0.0,0.0,0.0,1.0]
+		_matrixproj = [2.0/w,0.0,0.0,-1-(1.0/w),..
+				0.0,-2.0/h,0.0,1+(1.0/h),..
+				0.0,0.0,1.0,0.0,..
+				0.0,0.0,0.0,1.0]
 		MapBuffer(_projbuffer,0,D3D11_MAP_WRITE_DISCARD,0,_matrixproj,SizeOf(_matrixproj))
 	EndMethod
 	
