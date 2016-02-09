@@ -193,13 +193,15 @@ Type TD3D11Graphics Extends TGraphics
 		If _depth Return Null 'Already have a window thats full screen
 
 		'register wndclass
-		Local wc:WNDCLASS=New WNDCLASS
-		wc.hInstance=GetModuleHandleW( Null )
-		wc.lpfnWndProc=D3D11WndProc
-		wc.hCursor= Int LoadCursorW( Null,Short Ptr IDC_ARROW )
-		wc.lpszClassName=_wndClass.ToWString()
-		RegisterClassW wc
-		MemFree wc.lpszClassName
+		Local wc:WNDCLASSW=New WNDCLASSW
+		wc.SethInstance(GetModuleHandleW( Null ))
+		wc.SetlpfnWndProc(D3D11WndProc)
+		wc.SethCursor(LoadCursorW( Null,Short Ptr IDC_ARROW ))
+		
+		Local classname:Short Ptr = _wndclass.ToWString()
+		wc.SetlpszClassName(classname)
+		RegisterClassW wc.classptr
+		MemFree classname
 
 		'Create the window
 		Local wstyle = WS_VISIBLE|WS_POPUP
@@ -317,7 +319,7 @@ Type TD3D11Graphics Extends TGraphics
 		_d3d11dev.QueryInterface(IID_IDXGIDevice,Device)
 		Device.GetParent(IID_IDXGIAdapter,Adapter)
 		Adapter.GetParent(IID_IDXGIFactory,Factory)
-	
+
 		If Factory.CreateSwapChain(_d3d11dev,_sd,_swapchain)<0
 			Throw "Critical Error!~nCannot create swap chain"
 		EndIf
@@ -434,8 +436,14 @@ Type TD3D11GraphicsDriver Extends TGraphicsDriver
 		'BUGFIX:
 		'Part of IDXGIAdapter.CheckInterfaceSupport work-around
 		If _Device _Device.Release_
-		If _d3d11devcon _d3d11devcon.Release_ ; _d3d11devcon = Null
-		If _d3d11dev _d3d11dev.Release_ ; _d3d11dev = Null
+		If _d3d11devcon 
+			_d3d11devcon.Release_
+			_d3d11devcon = Null
+		EndIf
+		If _d3d11dev
+			_d3d11dev.Release_
+			_d3d11dev = Null
+		EndIf
 		
 		Return Self
 	EndMethod

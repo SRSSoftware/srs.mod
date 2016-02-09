@@ -225,22 +225,3 @@ EndType
 Type DXGI_SWAP_CHAIN_FLAG
 EndType
 
-Type DXGI_SWAP_CHAIN_DESC
-	Field BufferDesc_Width
-	Field BufferDesc_Height
-	Field BufferDesc_RefreshRate_Numerator
-	Field BufferDesc_RefreshRate_Denominator
-	Field BufferDesc_Format
-	Field BufferDesc_ScanlineOrdering
-	Field BufferDesc_Scaling
-	Field SampleDesc_Count
-	Field SampleDesc_Quality
-	Field BufferUsage
-	Field BufferCount
-	Field OutputWindow
-	Field Windowed
-	Field SwapEffect
-	Field Flags
-EndType
-
-

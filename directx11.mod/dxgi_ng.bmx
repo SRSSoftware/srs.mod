@@ -6,6 +6,24 @@ Import BRL.System
 
 Import "dxgi_common.bmx"
 
+Type DXGI_SWAP_CHAIN_DESC
+	Field BufferDesc_Width
+	Field BufferDesc_Height
+	Field BufferDesc_RefreshRate_Numerator
+	Field BufferDesc_RefreshRate_Denominator
+	Field BufferDesc_Format
+	Field BufferDesc_ScanlineOrdering
+	Field BufferDesc_Scaling
+	Field SampleDesc_Count
+	Field SampleDesc_Quality
+	Field BufferUsage
+	Field BufferCount
+	Field OutputWindow:Byte Ptr
+	Field Windowed
+	Field SwapEffect
+	Field Flags
+EndType
+
 Extern"win32"
 
 Interface IDXGIObject Extends IUnknown_
@@ -80,7 +98,7 @@ Interface IDXGIFactory Extends IDXGIObject
 	Method EnumAdapters(Adapter,ppAdapter:IDXGIAdapter Var)
 	Method MakeWindowAssociation(WindowHandle:Byte Ptr,Flags)
 	Method GetWindowAssociation(pWindowHandle:Byte Ptr Var)
-	Method CreateSwapChain(pDevice:Byte Ptr,pDesc:Byte Ptr,ppSwapChain:IDXGISwapChain Var)
+	Method CreateSwapChain(pDevice:IUnknown_,pDesc:Byte Ptr,ppSwapChain:IDXGISwapChain Var)
 	Method CreateSoftwareAdapter(Module_:Byte Ptr,ppAdapter:IDXGIAdapter Var)
 EndInterface 
 

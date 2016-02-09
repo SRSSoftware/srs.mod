@@ -129,7 +129,7 @@ Type TD3D11RingBuffer
 	EndMethod
 EndType
 
-Function CreateBuffer(Buffer:ID3D11Buffer Var,ByteWidth,Usage,BindFlags,CPUAccessFlags,Data:Byte Ptr=Null,Name$="")
+Function CreateBuffer(Buffer:ID3D11Buffer Var,ByteWidth,Usage,BindFlags,CPUAccessFlags,Data:Byte Ptr,Name$="")
 	Local SubResourceData:D3D11_SUBRESOURCE_DATA
 	Local hr
 
@@ -188,7 +188,7 @@ EndFunction
 
 Function CreateD3D11Max2DResources()
 	If _shaderready Return
-	
+
 	If Not _max2dshaders _max2dshaders = New TD3D11Max2DShaders
 	
 	_ringbuffer:TD3D11RingBuffer = New TD3D11RingBuffer.Create()
@@ -248,19 +248,34 @@ Function CreateD3D11Max2DResources()
 		WriteStdout "Cannot create vertex shader - compiled ok~n"
 		Return
 	EndIf
-	
+
 	'create input layout for the vertex shader
+?win32x86
 	Local polyLayout[] = [	0,0,DXGI_FORMAT_R32G32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0,..
 							0,0,DXGI_FORMAT_R32G32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0]
+?win32x64
+	Local polyLayout[] = [	0,0,0,DXGI_FORMAT_R32G32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0,..
+							0,0,0,DXGI_FORMAT_R32G32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0]
+?
+
+	Local pos:Byte Ptr = "POSITION".ToCString()
+	Local tex:Byte Ptr = "TEXCOORD".ToCString()
 	
-	polyLayout[0] = Int("POSITION".ToCString())
-	polyLayout[7] = Int("TEXCOORD".ToCString())
-	
+?win32x86
+	polylayout[0] = Int(pos)
+	polylayout[7] = Int(tex)
+?win32x64
+	polylayout[0] = Long(pos) & $ffffffff
+	polylayout[1] = (Long(pos) & $ffffffff00000000:Long) Shr 32
+	polylayout[8] = Long(tex) & $ffffffff
+	polylayout[9] = (Long(pos) & $ffffffff00000000:Long) Shr 32
+?
+
 	hr = _d3d11dev.CreateInputLayout(polyLayout,2,vscode.GetBufferPointer(),vscode.GetBuffersize(),_max2dlayout)
 	
-	MemFree Byte Ptr(Int(polyLayout[0]))
-	MemFree Byte Ptr(Int(polyLayout[7]))
-	
+	MemFree pos
+	MemFree tex
+
 	If hr<0
 		WriteStdout "Cannot create shader input layout~n"
 		Return
@@ -277,13 +292,13 @@ Function CreateD3D11Max2DResources()
 		SAFE_RELEASE(pErrorMsg)
 	EndIf
 	If hr<0
-		Notify "Cannot compile pixel shader source code for texturing!~nShutting down."
-		End
+		WriteStdout "Cannot compile pixel shader source code for texturing!~nShutting down.~n"
+		Return
 	EndIf
 
 	If _d3d11dev.CreatePixelShader(pscode.GetBufferPointer(),pscode.GetBufferSize(),Null,_texturepixelshader)<0
-		Notify "Cannot create pixel shader for texturing - compiled ok~n",True
-		End
+		WriteStdout "Cannot create pixel shader for texturing - compiled ok~n"
+		Return
 	EndIf
 	
 	'create color pixel shader
@@ -297,13 +312,13 @@ Function CreateD3D11Max2DResources()
 		SAFE_RELEASE(pErrorMsg)
 	EndIf
 	If hr<0
-		Notify "Cannot compile pixel shader source code for coloring!~nShutting down."
-		End
+		WriteStdout "Cannot compile pixel shader source code for coloring!~nShutting down.~n"
+		Return
 	EndIf
 
 	If _d3d11dev.CreatePixelShader(pscode.GetBufferPointer(),pscode.GetBufferSize(),Null,_colorpixelshader)<0
-		Notify "Cannot create pixel shader for coloring - compiled ok~n",True
-		End
+		WriteStdout "Cannot create pixel shader for coloring - compiled ok~n"
+		Return
 	EndIf
 
 	'create pixmap pixel shader
@@ -317,20 +332,20 @@ Function CreateD3D11Max2DResources()
 		SAFE_RELEASE(pErrorMsg)
 	EndIf
 	If hr<0
-		Notify "Cannot compile pixel shader source code for pixmaps ~nShutting down."
-		End
+		WriteStdout "Cannot compile pixel shader source code for pixmaps ~nShutting down.~n"
+		Return
 	EndIf
 
 	If _d3d11dev.CreatePixelShader(pscode.GetBufferPointer(),pscode.GetBufferSize(),Null,_pixmappixelshader)<0
-		Notify "Cannot create pixel shader for pixmaps - compiled ok~n",True
-		End
+		WriteStdout "Cannot create pixel shader for pixmaps - compiled ok~n"
+		Return
 	EndIf
 
 	'release blobs
 	SAFE_RELEASE(vscode)
 	SAFE_RELEASE(pscode)
 	SAFE_RELEASE(pErrorMsg)			'Should NEVER need this if we actually get here
-	
+
 	'create vertex buffer
 	CreateBuffer(_vertexbuffer,64,D3D11_USAGE_DYNAMIC,D3D11_BIND_VERTEX_BUFFER,D3D11_CPU_ACCESS_WRITE,Null,"Vertex Buffer")	
 
@@ -339,12 +354,13 @@ Function CreateD3D11Max2DResources()
 					0.0,-2.0/_height,0.0,1+(1.0/_height)-(1.0/_height),..
 					0.0,0.0,1.0,0.0,..
 					0.0,0.0,0.0,1.0]
+
 	CreateBuffer(_projbuffer,64,D3D11_USAGE_DYNAMIC,D3D11_BIND_CONSTANT_BUFFER,D3D11_CPU_ACCESS_WRITE,_matrixproj,"Matrix Buffer")
 	
 	'create buffer for pixel shader flags
 	_psflags = [1.0,1.0,1.0,1.0,1.0,0.0,0.0,0.0]
 	CreateBuffer(_psfbuffer,32,D3D11_USAGE_DYNAMIC,D3D11_BIND_CONSTANT_BUFFER,D3D11_CPU_ACCESS_WRITE,_psflags,"Pixel Shader Flags Buffer")
-	
+
 	'create texture sampler states
 	Local sd:D3D11_SAMPLER_DESC = New D3D11_SAMPLER_DESC
 	sd.Filter = D3D11_FILTER_MIN_MAG_MIP_POINT
@@ -362,15 +378,15 @@ Function CreateD3D11Max2DResources()
 	sd.MaxLOD = D3D11_FLOAT32_MAX
 
 	If _d3d11dev.CreateSamplerState(sd,_pointsamplerstate)<0
-		Notify "Cannot create point sampler state~nExiting.",True
-		End
+		WriteStdout "Cannot create point sampler state~nExiting.~n"
+		Return
 	EndIf
 	
 	sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR
 	
 	If _d3d11dev.CreateSamplerState(sd,_linearsamplerstate)<0
-		Notify "Cannot create linear sampler state~nExiting.",True
-		End
+		WriteStdout "Cannot create linear sampler state~nExiting.~n"
+		Return
 	EndIf
 	
 	_d3d11devcon.IASetInputLayout(_max2dlayout)
@@ -393,29 +409,44 @@ Function CreateD3D11Max2DResources()
 	_bd.RenderTarget0_DestBlendAlpha = D3D11_BLEND_ZERO
 	_bd.RenderTarget0_BlendOpAlpha = D3D11_BLEND_OP_ADD
 	_bd.RenderTarget0_RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL
-	_d3d11dev.CreateBlendState(_bd,_solidblend)
+	If _d3d11dev.CreateBlendState(_bd,_solidblend)<0
+		WriteStdout "Cannot create solid blend state~n"
+		Return
+	EndIf
 	
 	'Mask blend
 	_bd.RenderTarget0_BlendEnable = False
-	_d3d11dev.CreateBlendState(_bd,_maskblend)
+	If _d3d11dev.CreateBlendState(_bd,_maskblend)<0
+		WriteStdout "Cannot create mask blend state~n"
+		Return
+	EndIf
 
 	'Alpha blend
 	_bd.RenderTarget0_BlendEnable = True
 	_bd.RenderTarget0_SrcBlend = D3D11_BLEND_SRC_ALPHA
 	_bd.RenderTarget0_DestBlend = D3D11_BLEND_INV_SRC_ALPHA
-	_d3d11dev.CreateBlendState(_bd,_alphablend)
+	If _d3d11dev.CreateBlendState(_bd,_alphablend)<0
+		WriteStdout "Cannot create alpha blend state~n"
+		Return
+	EndIf
 	
 	'Light blend
 	_bd.RenderTarget0_BlendEnable = True
 	_bd.RenderTarget0_SrcBlend = D3D11_BLEND_SRC_ALPHA
 	_bd.RenderTarget0_DestBlend = D3D11_BLEND_ONE
-	_d3d11dev.CreateBlendState(_bd,_lightblend)
+	If _d3d11dev.CreateBlendState(_bd,_lightblend)<0
+		WriteStdout "Cannot create light blend state~n"
+		Return
+	EndIf
 
 	'Shade blend
 	_bd.RenderTarget0_BlendEnable = True
 	_bd.RenderTarget0_SrcBlend = D3D11_BLEND_ZERO
 	_bd.RenderTarget0_DestBlend = D3D11_BLEND_SRC_COLOR
-	_d3d11dev.CreateBlendState(_bd,_shadeblend)
+	If _d3d11dev.CreateBlendState(_bd,_shadeblend)<0
+		WriteStdout "Cannot create shade blend state~n"
+		Return
+	EndIf
 
 	_currblend = SOLIDBLEND
 	_currentrtv = _d3d11Graphics.GetRenderTarget()
@@ -469,10 +500,16 @@ Type TD3D11ImageFrame Extends TImageFrame
 		If Not _shaderready Return
 		If Not _TD3D11ImageFrameList _TD3D11ImageFrameList = New TList
 
+?win32x86
+		Local resDataItemLength:Int = 3
+?win32x64
+		Local resDataItemLength:Int = 4
+?
+
+		Local resData[resDataItemLength]
 		Local width#=pixmap.width
 		Local height#=pixmap.height
 		Local mipmapped = (flags&MIPMAPPEDIMAGE=MIPMAPPEDIMAGE)
-		Local resData[3]
 		Local mipindex
 
 		If pixmap.format<>PF_RGBA8888
@@ -480,10 +517,18 @@ Type TD3D11ImageFrame Extends TImageFrame
 		EndIf
 		
 		While pixmap.width > 0 And pixmap.height > 0
+?win32x64
+			resData[mipindex] = Long(pixmap.pixels) & $ffffffff
+			resData[mipindex+1] = (Long(pixmap.pixels) & $ffffffff00000000:Long) Shr 32
+			resData[mipindex+2] = pixmap.pitch
+			resData[mipindex+3] = pixmap.capacity
+?
+?win32x86
 			resData[mipindex] = Int(pixmap.pixels)
 			resData[mipindex+1] = pixmap.pitch
 			resData[mipindex+2] = pixmap.capacity
-			
+?
+	
 			If Not mipmapped Exit
 			
 			If pixmap.width>1 And pixmap.height>1
@@ -495,8 +540,9 @@ Type TD3D11ImageFrame Extends TImageFrame
 					pixmap=ResizePixmap(pixmap,pixmap.width,pixmap.height/2)
 				EndIf
 			EndIf
-			resData = resData[..resData.length+3]
-			mipindex :+ 3
+
+			resData = resData[..resData.length+resDataItemLength]
+			mipindex :+ resDataItemLength
 		Wend
 		
 		_uscale=1.0 / width
@@ -539,17 +585,17 @@ Type TD3D11ImageFrame Extends TImageFrame
 			Return
 		EndIf
 		
-		If Not mipmapped
+		'If Not mipmapped
 			'If (flags&RENDERIMAGE)
 			'	If _d3d11dev.CreateRenderTargetView(_tex2D,Null,_rtv)<0
 			'		WriteStdout "Cannot use texture as a Render Texture~n"
 			'		Return
 			'	Else
 					'Created OK so clear the allocated memory
-					_d3d11devcon.ClearRenderTargetView(_rtv,[0.0,0.0,0.0,0.0])
+					'_d3d11devcon.ClearRenderTargetView(_rtv,[0.0,0.0,0.0,0.0])
 			'	EndIf
 			'EndIf
-		EndIf
+		'EndIf
 		
 		_seq=GraphicsSeq
 		
@@ -1126,11 +1172,20 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		pTexDesc.CPUAccessFlags = 0
 		pTexDesc.MiscFlags = 0
 		
-		Local desc[3]
-		desc[0]=Int(pixmap.pixels)
-		desc[1]=pixmap.pitch
-		desc[2]=pixmap.pitch*pixmap.height
-		
+?win32x64
+			Local desc[4]
+			desc[0] = Long(pixmap.pixels) & $ffffffff
+			desc[1] = (Long(pixmap.pixels) & $ffffffff00000000:Long) Shr 32
+			desc[2] = pixmap.pitch
+			desc[3] = pixmap.pitch*pixmap.height
+?
+?win32x86
+			Local desc[3]
+			desc[0] = Int(pixmap.pixels)
+			desc[1] = pixmap.pitch
+			desc[2] = pixmap.pitch*pixmap.height
+?
+
 		If _d3d11dev.CreateTexture2D(pTexDesc,desc,pTex)<0
 			WriteStdout "DrawPixmap Error - Cannot create texture!~n"
 			Return
