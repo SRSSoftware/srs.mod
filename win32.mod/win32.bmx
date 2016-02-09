@@ -7,9 +7,9 @@ Module srs.win32
 
 Extern"Win32"
 Interface IUnknown_
+	Method QueryInterface(riid:Byte Ptr,ppIUnk:IUnknown_ Var)
 	Method AddRef()
 	Method Release_()
-	Method QueryInterface(riid:Byte Ptr,ppIUnk:IUnknown_ Var)
 EndInterface
 EndExtern
 
