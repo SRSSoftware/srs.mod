@@ -1,3 +1,5 @@
+Strict
+
 Const D3D11_SHADER_DEBUG                          = 1 Shl 0
 Const D3D11_SHADER_SKIP_VALIDATION                = 1 Shl 1
 Const D3D11_SHADER_SKIP_OPTIMIZATION              = 1 Shl 2
