@@ -80,7 +80,7 @@ Interface IDXGIFactory Extends IDXGIObject
 	Method EnumAdapters(Adapter,ppAdapter:IDXGIAdapter Var)
 	Method MakeWindowAssociation(WindowHandle:Byte Ptr,Flags)
 	Method GetWindowAssociation(pWindowHandle:Byte Ptr Var)
-	Method CreateSwapChain(pDevice:IUnknown,pDesc:Byte Ptr,ppSwapChain:IDXGISwapChain Var)
+	Method CreateSwapChain(pDevice:Byte Ptr,pDesc:Byte Ptr,ppSwapChain:IDXGISwapChain Var)
 	Method CreateSoftwareAdapter(Module_:Byte Ptr,ppAdapter:IDXGIAdapter Var)
 EndInterface 
 
