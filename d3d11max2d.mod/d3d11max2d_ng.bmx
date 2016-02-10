@@ -1,5 +1,5 @@
 
-Strict
+SuperStrict
 
 ?WIN32
 
@@ -29,10 +29,10 @@ Global _clscolor#[] = [0.0,0.0,0.0,1.0]
 Global _ix#,_iy#,_jx#,_jy#
 Global _linewidth#
 Global _width#,_height#
-Global _currblend
+Global _currblend:Int
 
 'D3D11
-Global _shaderready
+Global _shaderready:Int
 Global _currentshader:ID3D11PixelShader
 Global _currentsrv:ID3D11ShaderResourceView
 Global _currentsampler:ID3D11SamplerState
@@ -83,7 +83,7 @@ Function SAFE_RELEASE(pUnk:IUnknown_ Var)
 EndFunction
 
 Type TD3D11RingBuffer
-	Const RING_SIZE = 1048576 '1MB
+	Const RING_SIZE:Int = 1048576 '1MB
 	
 	Field _buffer:ID3D11Buffer
 	Field _ringPos:Int
@@ -105,7 +105,7 @@ Type TD3D11RingBuffer
 	Method Allocate:Int(Data#[])
 		Local mRes:D3D11_MAPPED_SUBRESOURCE = New D3D11_MAPPED_SUBRESOURCE
 
-		Local MapPermission = D3D11_MAP_WRITE_NO_OVERWRITE
+		Local MapPermission:Int = D3D11_MAP_WRITE_NO_OVERWRITE
 		If _ringpos + SizeOf(Data) > RING_SIZE
 			MapPermission = D3D11_MAP_WRITE_DISCARD
 			_ringPos = 0
@@ -129,9 +129,9 @@ Type TD3D11RingBuffer
 	EndMethod
 EndType
 
-Function CreateBuffer(Buffer:ID3D11Buffer Var,ByteWidth,Usage,BindFlags,CPUAccessFlags,Data:Byte Ptr,Name$="")
+Function CreateBuffer:Int(Buffer:ID3D11Buffer Var,ByteWidth:Int,Usage:Int,BindFlags:Int,CPUAccessFlags:Int,Data:Byte Ptr,Name$="")
 	Local SubResourceData:D3D11_SUBRESOURCE_DATA
-	Local hr
+	Local hr:Int
 
 	Local Desc:D3D11_BUFFER_DESC = New D3D11_BUFFER_DESC	
 	Desc.ByteWidth = ByteWidth
@@ -156,8 +156,8 @@ Function CreateBuffer(Buffer:ID3D11Buffer Var,ByteWidth,Usage,BindFlags,CPUAcces
 	EndIf
 EndFunction
 
-Function MapBuffer(Buffer:ID3D11Buffer Var,SubresourceIndex,MapType,MapFlags,Data:Byte Ptr,Size,Name$="")
-	If Not Buffer Return
+Function MapBuffer:Int(Buffer:ID3D11Buffer Var,SubresourceIndex:Int,MapType:Int,MapFlags:Int,Data:Byte Ptr,Size:Int,Name$="")
+	If Not Buffer Return 0
 
 	Local Map:D3D11_MAPPED_SUBRESOURCE = New D3D11_MAPPED_SUBRESOURCE
 
@@ -186,8 +186,8 @@ Function DisableAlphaTest()
 	MapBuffer(_psfbuffer,0,D3D11_MAP_WRITE_DISCARD,0,_psflags,SizeOf(_psflags))
 EndFunction
 
-Function CreateD3D11Max2DResources()
-	If _shaderready Return
+Function CreateD3D11Max2DResources:Int()
+	If _shaderready Return False
 
 	If Not _max2dshaders _max2dshaders = New TD3D11Max2DShaders
 	
@@ -200,7 +200,7 @@ Function CreateD3D11Max2DResources()
 
 	If _d3d11dev.CreateDepthStencilState(dsdesc,dsstate)<0
 		WriteStdout "Cannot create depth stencil state~n"
-		Return
+		Return False
 	EndIf
 	
 	_d3d11devcon.OMSetDepthStencilState(dsstate,0)
@@ -214,7 +214,7 @@ Function CreateD3D11Max2DResources()
 
 	If _d3d11dev.CreateRasterizerState(rsdesc,_rs)<0
 		WriteStdout "Cannot create rasterizer state~n"
-		Return
+		Return False
 	EndIf
 	
 	_d3d11devcon.RSSetScissorRects(1,[0,0,GraphicsWidth(),GraphicsHeight()])
@@ -223,7 +223,7 @@ Function CreateD3D11Max2DResources()
 	_d3d11graphics.AddRelease _rs
 	
 	'create shaders
-	Local hr
+	Local hr:Int
 	Local vscode:ID3DBlob
 	Local pscode:ID3DBlob
 	Local pErrorMsg:ID3DBlob
@@ -241,20 +241,20 @@ Function CreateD3D11Max2DResources()
 		
 	If hr<0
 			WriteStdout "Cannot compile vertex shader source code~n"
-			Return
+			Return False
 	EndIf
 
 	If _d3d11dev.CreateVertexShader(vscode.GetBufferPointer(),vscode.GetBufferSize(),Null,_vertexshader)<0
 		WriteStdout "Cannot create vertex shader - compiled ok~n"
-		Return
+		Return False
 	EndIf
 
 	'create input layout for the vertex shader
 ?win32x86
-	Local polyLayout[] = [	0,0,DXGI_FORMAT_R32G32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0,..
+	Local polyLayout:Int[] = [	0,0,DXGI_FORMAT_R32G32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0,..
 							0,0,DXGI_FORMAT_R32G32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0]
 ?win32x64
-	Local polyLayout[] = [	0,0,0,DXGI_FORMAT_R32G32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0,..
+	Local polyLayout:Int[] = [	0,0,0,DXGI_FORMAT_R32G32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0,..
 							0,0,0,DXGI_FORMAT_R32G32_FLOAT,0,D3D11_APPEND_ALIGNED_ELEMENT,D3D11_INPUT_PER_VERTEX_DATA,0]
 ?
 
@@ -278,7 +278,7 @@ Function CreateD3D11Max2DResources()
 
 	If hr<0
 		WriteStdout "Cannot create shader input layout~n"
-		Return
+		Return False
 	EndIf
 
 	'create texture pixel shader
@@ -293,12 +293,12 @@ Function CreateD3D11Max2DResources()
 	EndIf
 	If hr<0
 		WriteStdout "Cannot compile pixel shader source code for texturing!~nShutting down.~n"
-		Return
+		Return False
 	EndIf
 
 	If _d3d11dev.CreatePixelShader(pscode.GetBufferPointer(),pscode.GetBufferSize(),Null,_texturepixelshader)<0
 		WriteStdout "Cannot create pixel shader for texturing - compiled ok~n"
-		Return
+		Return False
 	EndIf
 	
 	'create color pixel shader
@@ -313,12 +313,12 @@ Function CreateD3D11Max2DResources()
 	EndIf
 	If hr<0
 		WriteStdout "Cannot compile pixel shader source code for coloring!~nShutting down.~n"
-		Return
+		Return False
 	EndIf
 
 	If _d3d11dev.CreatePixelShader(pscode.GetBufferPointer(),pscode.GetBufferSize(),Null,_colorpixelshader)<0
 		WriteStdout "Cannot create pixel shader for coloring - compiled ok~n"
-		Return
+		Return False
 	EndIf
 
 	'create pixmap pixel shader
@@ -333,12 +333,12 @@ Function CreateD3D11Max2DResources()
 	EndIf
 	If hr<0
 		WriteStdout "Cannot compile pixel shader source code for pixmaps ~nShutting down.~n"
-		Return
+		Return False
 	EndIf
 
 	If _d3d11dev.CreatePixelShader(pscode.GetBufferPointer(),pscode.GetBufferSize(),Null,_pixmappixelshader)<0
 		WriteStdout "Cannot create pixel shader for pixmaps - compiled ok~n"
-		Return
+		Return False
 	EndIf
 
 	'release blobs
@@ -379,14 +379,14 @@ Function CreateD3D11Max2DResources()
 
 	If _d3d11dev.CreateSamplerState(sd,_pointsamplerstate)<0
 		WriteStdout "Cannot create point sampler state~nExiting.~n"
-		Return
+		Return False
 	EndIf
 	
 	sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR
 	
 	If _d3d11dev.CreateSamplerState(sd,_linearsamplerstate)<0
 		WriteStdout "Cannot create linear sampler state~nExiting.~n"
-		Return
+		Return False
 	EndIf
 	
 	_d3d11devcon.IASetInputLayout(_max2dlayout)
@@ -411,14 +411,14 @@ Function CreateD3D11Max2DResources()
 	_bd.RenderTarget0_RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL
 	If _d3d11dev.CreateBlendState(_bd,_solidblend)<0
 		WriteStdout "Cannot create solid blend state~n"
-		Return
+		Return False
 	EndIf
 	
 	'Mask blend
 	_bd.RenderTarget0_BlendEnable = False
 	If _d3d11dev.CreateBlendState(_bd,_maskblend)<0
 		WriteStdout "Cannot create mask blend state~n"
-		Return
+		Return False
 	EndIf
 
 	'Alpha blend
@@ -427,7 +427,7 @@ Function CreateD3D11Max2DResources()
 	_bd.RenderTarget0_DestBlend = D3D11_BLEND_INV_SRC_ALPHA
 	If _d3d11dev.CreateBlendState(_bd,_alphablend)<0
 		WriteStdout "Cannot create alpha blend state~n"
-		Return
+		Return False
 	EndIf
 	
 	'Light blend
@@ -436,7 +436,7 @@ Function CreateD3D11Max2DResources()
 	_bd.RenderTarget0_DestBlend = D3D11_BLEND_ONE
 	If _d3d11dev.CreateBlendState(_bd,_lightblend)<0
 		WriteStdout "Cannot create light blend state~n"
-		Return
+		Return False
 	EndIf
 
 	'Shade blend
@@ -445,7 +445,7 @@ Function CreateD3D11Max2DResources()
 	_bd.RenderTarget0_DestBlend = D3D11_BLEND_SRC_COLOR
 	If _d3d11dev.CreateBlendState(_bd,_shadeblend)<0
 		WriteStdout "Cannot create shade blend state~n"
-		Return
+		Return False
 	EndIf
 
 	_currblend = SOLIDBLEND
@@ -494,10 +494,10 @@ Type TD3D11ImageFrame Extends TImageFrame
 	Field _rtv:ID3D11RenderTargetView
 	Field _sampler:ID3D11SamplerState
 	Field _uscale#,_vscale#
-	Field _seq
+	Field _seq:Int
 
-	Method Create:TImageFrame(pixmap:TPixmap,flags)
-		If Not _shaderready Return
+	Method Create:TImageFrame(pixmap:TPixmap,flags:Int)
+		If Not _shaderready Return Null
 		If Not _TD3D11ImageFrameList _TD3D11ImageFrameList = New TList
 
 ?win32x86
@@ -506,11 +506,11 @@ Type TD3D11ImageFrame Extends TImageFrame
 		Local resDataItemLength:Int = 4
 ?
 
-		Local resData[resDataItemLength]
+		Local resData:Int[resDataItemLength]
 		Local width#=pixmap.width
 		Local height#=pixmap.height
-		Local mipmapped = (flags&MIPMAPPEDIMAGE=MIPMAPPEDIMAGE)
-		Local mipindex
+		Local mipmapped:Int = (flags&MIPMAPPEDIMAGE=MIPMAPPEDIMAGE)
+		Local mipindex:Int
 
 		If pixmap.format<>PF_RGBA8888
 			pixmap = pixmap.Convert( PF_RGBA8888 )
@@ -559,7 +559,7 @@ Type TD3D11ImageFrame Extends TImageFrame
 		desc.SampleDesc_Quality = 0
 		desc.Usage = D3D11_USAGE_DEFAULT
 		
-		Local bind = D3D11_BIND_SHADER_RESOURCE
+		Local bind:Int = D3D11_BIND_SHADER_RESOURCE
 		'If Not mipmapped
 		'	If flags&RENDERIMAGE bind = bind|D3D11_BIND_RENDER_TARGET
 		'EndIf
@@ -569,7 +569,7 @@ Type TD3D11ImageFrame Extends TImageFrame
 
 		If _d3d11dev.CreateTexture2D(desc,resData,_tex2D) < 0
 			WriteStdout("Cannot create texture~n")
-			Return
+			Return Null
 		EndIf
 		
 		'Setup for shader
@@ -582,7 +582,7 @@ Type TD3D11ImageFrame Extends TImageFrame
 				
 		If _d3d11dev.CreateShaderResourceView(_tex2D,srdesc,_srv)<0
 			WriteStdout "Cannot create ShaderResourceView for TImage texture~n"
-			Return
+			Return Null
 		EndIf
 		
 		'If Not mipmapped
@@ -615,10 +615,10 @@ Type TD3D11ImageFrame Extends TImageFrame
 		SAFE_RELEASE(_rtv)
 	EndMethod
 
-	Method Draw( x0#,y0#,x1#,y1#,tx#,ty#,sx#,sy#,sw#,sh# )
+	Method Draw:Int( x0#,y0#,x1#,y1#,tx#,ty#,sx#,sy#,sw#,sh# )
 		_driver.AdjustScreenRotationScale tx,ty
 		
-		If Not _shaderready Return
+		If Not _shaderready Return False
 
 		Local u0#=sx*_uscale
 		Local v0#=sy*_vscale
@@ -646,8 +646,8 @@ Type TD3D11ImageFrame Extends TImageFrame
 		_verts[14]=u1
 		_verts[15]=v1
 
-		Local stride = 16
-		Local offset = 0
+		Local stride:Int = 16
+		Local offset:Int = 0
 		
 		'Use a ring buffer - MS recommend this approach, but tiny tiny bit inefficient due to 'low through-put' of Max2D
 		'Local offset = _ringBuffer.Allocate(_verts)
@@ -729,7 +729,7 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 	
 	Method ToString$()
 		Local Feature$
-		Local FeatureLevel
+		Local FeatureLevel:Int
 		
 		'If _d3d11dev FeatureLevel = _d3d11dev.GetFeatureLevel()
 		FeatureLevel = D3D11GetFeatureLevel()
@@ -756,18 +756,18 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		Return D3D11GraphicsDriver().GraphicsModes()
 	EndMethod
 	
-	Method AttachGraphics:TGraphics( hwnd:Byte Ptr,flags )
+	Method AttachGraphics:TGraphics( hwnd:Byte Ptr,flags:Int )
 		Local g:TD3D11Graphics = D3D11GraphicsDriver().AttachGraphics( hwnd,flags )
 		If g Return TMax2DGraphics.Create( g ,Self )
 	EndMethod
 	
-	Method CreateGraphics:TGraphics( width,height,depth,hertz,flags )
+	Method CreateGraphics:TGraphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Int )
 		Local g:TD3D11Graphics = D3D11GraphicsDriver().CreateGraphics(width,height,depth,hertz,flags)
 		If Not g Return Null
 		Return TMax2DGraphics.Create(g,Self)
 	EndMethod
 	
-	Method SetGraphics( g:TGraphics )
+	Method SetGraphics:Int( g:TGraphics )
 		If Not g
 			FreeD3D11Max2DResources
 			
@@ -790,7 +790,7 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 			TMax2DGraphics.ClearCurrent
 			D3D11GraphicsDriver().SetGraphics Null
 			
-			Return
+			Return False
 		EndIf
 		
 		_max2DGraphics = TMax2DGraphics( g )
@@ -813,17 +813,17 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		_height = GraphicsHeight()
 	EndMethod
 	
-	Method Flip( sync )
+	Method Flip:Int( sync:Int )
 		D3D11GraphicsDriver().Flip( sync )
 	EndMethod
 
 	'TMax2DDriver
-	Method CreateFrameFromPixmap:TImageFrame( pixmap:TPixmap,flags )
+	Method CreateFrameFromPixmap:TImageFrame( pixmap:TPixmap,flags:Int )
 		Return New TD3D11ImageFrame.Create(pixmap,flags)
 	EndMethod
 		
-	Method SetBlend( blend )
-		If _currblend = blend Return
+	Method SetBlend:Int( blend:Int )
+		If _currblend = blend Return False
 
 		Local BF#[] = [0.0,0.0,0.0,0.0] 'Not utilised
 		Select blend
@@ -847,8 +847,8 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		_currblend = blend
 	EndMethod
 	
-	Method SetAlpha( alpha# )
-		If alpha = _psflags[3] Return
+	Method SetAlpha:Int( alpha# )
+		If alpha = _psflags[3] Return True
 
 		alpha=Max(Min(alpha,1),0) 'clamp 0.0 - 1.0
 		_psflags[3] = alpha
@@ -856,10 +856,10 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		MapBuffer(_psfbuffer,0,D3D11_MAP_WRITE_DISCARD,0,_psflags,SizeOf(_psflags))
 	EndMethod
 
-	Method SetColor( red,green,blue )
-		Local r = Max(Min(red,255),0)
-		Local g = Max(Min(green,255),0)
-		Local b = Max(Min(blue,255),0)
+	Method SetColor:Int( red:Int,green:Int,blue:Int )
+		Local r:Int = Max(Min(red,255),0)
+		Local g:Int = Max(Min(green,255),0)
+		Local b:Int = Max(Min(blue,255),0)
 		
 		_psflags[0] = OneOver255 *  r
 		_psflags[1] = OneOver255 *  g
@@ -868,36 +868,36 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		MapBuffer(_psfbuffer,0,D3D11_MAP_WRITE_DISCARD,0,_psflags,SizeOf(_psflags))
 	EndMethod
 
-	Method SetClsColor( red,green,blue )
-		Local r = Max(Min(red,255),0)
-		Local g = Max(Min(green,255),0)
-		Local b = Max(Min(blue,255),0)
+	Method SetClsColor:Int( red:Int,green:Int,blue:Int )
+		Local r:Int = Max(Min(red,255),0)
+		Local g:Int = Max(Min(green,255),0)
+		Local b:Int = Max(Min(blue,255),0)
 
 		_clscolor[0] = OneOver255 * r
 		_clscolor[1] = OneOver255 * g
 		_clscolor[2] = OneOver255 * b
 	EndMethod
 
-	Method SetViewport( x,y,width,height )
+	Method SetViewport:Int( x:Int,y:Int,width:Int,height:Int )
 		_d3d11devcon.RSSetScissorRects(1,[x,y,x+width,y+height])
 	EndMethod
 
-	Method SetTransform( xx#,xy#,yx#,yy# )
+	Method SetTransform:Int( xx#,xy#,yx#,yy# )
 		_ix = xx
 		_iy = xy
 		_jx = yx
 		_jy = yy
 	EndMethod
 
-	Method SetLineWidth( width# )
+	Method SetLineWidth:Int( width# )
 		_linewidth=width
 	EndMethod
 
-	Method Cls()
+	Method Cls:Int()
 		_d3d11devcon.ClearRenderTargetView( _currentrtv , _clscolor )
 	EndMethod
 
-	Method Plot( x#,y# )
+	Method Plot:Int( x#,y# )
 		TransformPoint x,y
 		x :+ focus_x
 		y :+ focus_y
@@ -906,8 +906,8 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		_vert[0]=x
 		_vert[1]=y
 			
-		Local stride = 16
-		Local offset = 0
+		Local stride:Int = 16
+		Local offset:Int = 0
 			
 		MapBuffer(_vertexbuffer,0,D3D11_MAP_WRITE_DISCARD,0,_vert,SizeOf(_vert))
 
@@ -920,7 +920,7 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		_d3d11devcon.Draw(1,0)
 	EndMethod
 
-	Method DrawLine( x0#,y0#,x1#,y1#,tx#,ty# )
+	Method DrawLine:Int( x0#,y0#,x1#,y1#,tx#,ty# )
 		Local _verts#[16]
 		
 		TransformPoint x0,y0
@@ -939,8 +939,8 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		_d3d11devcon.PSSetConstantBuffers(0,1,Varptr _psfbuffer)
 		_d3d11devcon.IASetInputLayout(_max2dlayout)
 
-		Local stride = 16
-		Local offset = 0
+		Local stride:Int = 16
+		Local offset:Int = 0
 		
 		If _lineWidth<=1
 			_verts[0]=lx0
@@ -953,7 +953,7 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 			_d3d11devcon.IASetVertexBuffers(0,1,Varptr _vertexbuffer,Varptr stride,Varptr offset)
 			_d3d11devcon.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINELIST)
 			_d3d11devcon.Draw(2,0)
-			Return
+			Return 0
 		EndIf
 		
 		Local lw#=_lineWidth
@@ -984,7 +984,7 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		_d3d11devcon.Draw(4,0)
 	EndMethod
 
-	Method DrawRect( x0#,y0#,x1#,y1#,tx#,ty# )
+	Method DrawRect:Int( x0#,y0#,x1#,y1#,tx#,ty# )
 		Local _verts#[16]
 		
 		AdjustScreenRotationScale tx,ty
@@ -1000,8 +1000,8 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		
 		MapBuffer(_vertexbuffer,0,D3D11_MAP_WRITE_DISCARD,0,_verts,SizeOf(_verts))
 		
-		Local stride = 16
-		Local offset = 0
+		Local stride:Int = 16
+		Local offset:Int = 0
 		
 		_d3d11devcon.VSSetShader(_vertexshader,Null,0)
 		_d3d11devcon.PSSetShader(_colorpixelshader,Null,0)
@@ -1014,14 +1014,14 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		ResetScreenRotationScale
 	EndMethod
 
-	Method DrawOval(x0#,y0#,x1#,y1#,tx#,ty#)
-		Local BuildBuffer=False
+	Method DrawOval:Int(x0#,y0#,x1#,y1#,tx#,ty#)
+		Local BuildBuffer:Int=False
 
 		AdjustScreenRotationScale tx,ty
 		
 		Local xr#=(x1-x0)*0.5
 		Local yr#=(y1-y0)*0.5
-		Local segs=Abs(xr)+Abs(yr)
+		Local segs:Int=Abs(xr)+Abs(yr)
 		segs=(Max(segs,12)&~3)
 
 		If _ovalarray.length <> segs*12
@@ -1041,7 +1041,7 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		Local cy#=y0 + ty
 		
 		Local i#
-		Local index
+		Local index:Int
 		Repeat
 			_ovalarray[index] = cx
 			_ovalarray[index+1] = cy
@@ -1077,8 +1077,8 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 			CreateBuffer(_ovalbuffer,SizeOf(_ovalarray),D3D11_USAGE_DYNAMIC,D3D11_BIND_VERTEX_BUFFER,D3D11_CPU_ACCESS_WRITE,_ovalarray,"Oval Array")
 		EndIf
 		
-		Local stride = 16
-		Local offset = 0
+		Local stride:Int = 16
+		Local offset:Int = 0
 		
 		_d3d11devcon.VSSetShader(_vertexshader,Null,0)
 		_d3d11devcon.PSSetShader(_colorpixelshader,Null,0)
@@ -1091,14 +1091,14 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		ResetScreenRotationScale
 	EndMethod
 
-	Method DrawPoly( inverts#[],handlex#,handley#,tx#,ty# )
+	Method DrawPoly:Int( inverts#[],handlex#,handley#,tx#,ty# )
 		AdjustScreenRotationScale tx,ty
 		
-		If inverts.length<6 Or (inverts.length&1) Return
-		Local nv=inverts.length/2
-		Local numpolys = nv-2
+		If inverts.length<6 Or (inverts.length&1) Return 0
+		Local nv:Int=inverts.length/2
+		Local numpolys:Int = nv-2
 		
-		Local buildbuffer = False
+		Local buildbuffer:Int = False
 		If _polyarray.length <> numpolys*12
 			'BUG FIX - Causes intermittant EAV if removed!!!
 			'Only when array size is changed every frame
@@ -1112,8 +1112,8 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		Local v0x#=inverts[0]+handlex
 		Local v0y#=inverts[1]+handley
 
-		Local i=1
-		Local j
+		Local i:Int=1
+		Local j:Int
 		Repeat			
 			Local v1x#=inverts[i*2]+handlex
 			Local v1y#=inverts[i*2+1]+handley
@@ -1140,8 +1140,8 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 			CreateBuffer(_polybuffer,SizeOf(_polyarray),D3D11_USAGE_DYNAMIC,D3D11_BIND_VERTEX_BUFFER,D3D11_CPU_ACCESS_WRITE,_polyarray,"Poly Array")
 		EndIf
 
-		Local stride = 16
-		Local offset = 0
+		Local stride:Int = 16
+		Local offset:Int = 0
 		
 		_d3d11devcon.VSSetShader(_vertexshader,Null,0)
 		_d3d11devcon.PSSetShader(_colorpixelshader,Null,0)
@@ -1154,7 +1154,7 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		ResetScreenRotationScale
 	EndMethod
 
-	Method DrawPixmap( pixmap:TPixmap,x0,y0 )		
+	Method DrawPixmap:Int( pixmap:TPixmap,x0:Int,y0:Int )
 		Local pTex:ID3D11Texture2D
 		Local pTexDesc:D3D11_TEXTURE2D_DESC = New D3D11_TEXTURE2D_DESC
 		
@@ -1173,14 +1173,14 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		pTexDesc.MiscFlags = 0
 		
 ?win32x64
-			Local desc[4]
+			Local desc:Int[4]
 			desc[0] = Long(pixmap.pixels) & $ffffffff
 			desc[1] = (Long(pixmap.pixels) & $ffffffff00000000:Long) Shr 32
 			desc[2] = pixmap.pitch
 			desc[3] = pixmap.pitch*pixmap.height
 ?
 ?win32x86
-			Local desc[3]
+			Local desc:Int[3]
 			desc[0] = Int(pixmap.pixels)
 			desc[1] = pixmap.pitch
 			desc[2] = pixmap.pitch*pixmap.height
@@ -1188,7 +1188,7 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 
 		If _d3d11dev.CreateTexture2D(pTexDesc,desc,pTex)<0
 			WriteStdout "DrawPixmap Error - Cannot create texture!~n"
-			Return
+			Return 0
 		EndIf
 		
 		Local pmverts#[] = [Float(x0),Float(y0),0.0,0.0,..
@@ -1208,11 +1208,11 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		
 		If _d3d11dev.CreateShaderResourceView(pTex,srdesc,pmsrv)<0
 			WriteStdout "Cannot create ShaderResourceView for pixamp texture~n"
-			Return
+			Return 0
 		EndIf
 		
-		Local stride = 16
-		Local offset = 0
+		Local stride:Int = 16
+		Local offset:Int = 0
 
 		_d3d11devcon.PSSetShaderResources(0,1,Varptr pmsrv)		
 		_d3d11devcon.VSSetShader(_vertexshader,Null,0)
@@ -1227,7 +1227,7 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		SAFE_RELEASE(pmsrv)
 	EndMethod
 
-	Method GrabPixmap:TPixmap(x,y,width,height)
+	Method GrabPixmap:TPixmap(x:Int,y:Int,width:Int,height:Int)
 		Local pixmap:TPixmap=CreatePixmap(width,height,PF_RGBA8888)
 
 		Local pRTV:ID3D11RenderTargetView
@@ -1254,7 +1254,7 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		Local _map:D3D11_MAPPED_SUBRESOURCE = New D3D11_MAPPED_SUBRESOURCE
 		_d3d11devcon.Map(pTex,0,D3D11_MAP_READ,0,_map)
 
-			For Local h = 0 Until pixmap.height
+			For Local h:Int = 0 Until pixmap.height
 				Local dst:Byte Ptr = pixmap.pixels + h*pixmap.pitch
 				Local src:Byte Ptr = _map.pData+(x Shl 2 + (y*_map.RowPitch))+h*_map.RowPitch
 				MemCopy dst,src,pixmap.pitch
@@ -1268,7 +1268,7 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		Return pixmap
 	EndMethod
 
-	Method SetResolution( w#,h# )
+	Method SetResolution:Int( w#,h# )
 		_matrixproj = [2.0/w,0.0,0.0,-1-(1.0/w),..
 				0.0,-2.0/h,0.0,1+(1.0/h),..
 				0.0,0.0,1.0,0.0,..
@@ -1287,7 +1287,7 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 EndType
 
 Function D3D11Max2DDriver:TD3D11Max2DDriver()
-	Global _done
+	Global _done:Int
 	
 	If Not _done
 		_driver = Null
@@ -1297,7 +1297,7 @@ Function D3D11Max2DDriver:TD3D11Max2DDriver()
 	Return _driver
 End Function
 
-Function VerifyD3D11Max2DDriver()
+Function VerifyD3D11Max2DDriver:Int()
 	If GetGraphicsDriver().ToSTring()[0..9] = "DirectX11" Return True
 EndFunction
 
@@ -1306,7 +1306,7 @@ Function PlotPoints(points#[])
 	If Not VerifyD3D11Max2DDriver() Return
 	If points.length<2 Or (points.length&1) Return
 	
-	Local buildbuffer = False
+	Local buildbuffer:Int = False
 	Local ox#=_max2DGraphics.origin_x
 	Local oy#=_max2DGraphics.origin_y
 	
@@ -1320,7 +1320,7 @@ Function PlotPoints(points#[])
 		buildbuffer = True
 	EndIf
 
-	Local i
+	Local i:Int
 	Repeat
 		_pointarray[i*4+0] = points[i*2+0] + ox
 		_pointarray[i*4+1] = points[i*2+1] + oy
@@ -1335,8 +1335,8 @@ Function PlotPoints(points#[])
 		CreateBuffer(_pointbuffer,SizeOf(_pointarray),D3D11_USAGE_DYNAMIC,D3D11_BIND_VERTEX_BUFFER,D3D11_CPU_ACCESS_WRITE,_pointarray,"Point Array")
 	EndIf		
 
-	Local stride=16
-	Local offset=0
+	Local stride:Int=16
+	Local offset:Int=0
 	
 	_d3d11devcon.VSSetShader(_vertexshader,Null,0)
 	_d3d11devcon.PSSetShader(_colorpixelshader,Null,0)
@@ -1347,12 +1347,12 @@ Function PlotPoints(points#[])
 	_d3d11devcon.Draw(points.length*0.5,0)
 EndFunction
 
-Function DrawLines(lines#[],Linked=False)
+Function DrawLines(lines#[],Linked:Int=False)
 	If Not VerifyD3D11Max2DDriver() Return
 	If lines.length<4 Or (lines.length&1) Return
 	If linked And (lines.length Mod 4) Return
 	
-	Local buildbuffer = False
+	Local buildbuffer:Int = False
 	
 	Local handlex#=_max2DGraphics.handle_x
 	Local handley#=_max2DGraphics.handle_y
@@ -1369,15 +1369,15 @@ Function DrawLines(lines#[],Linked=False)
 		buildbuffer = True
 	EndIf
 	
-	Local index = 0	
-	For Local i = 0 Until lines.length Step 2
+	Local index:Int = 0	
+	For Local i:Int = 0 Until lines.length Step 2
 		_linearray[index] = (handlex+lines[i])*_ix + (handley+lines[i+1])*_iy + ox
 		_linearray[index+1] = (handlex+lines[i])*_jx + (handley+lines[i+1])*_jy + oy
 		index:+4
 	Next
 
-	Local stride = 16
-	Local offset = 0
+	Local stride:Int = 16
+	Local offset:Int = 0
 	
 	If Not buildbuffer
 		MapBuffer(_linebuffer,0,D3D11_MAP_WRITE_DISCARD,0,_linearray,SizeOf(_linearray))
@@ -1396,34 +1396,34 @@ Function DrawLines(lines#[],Linked=False)
 	_d3d11devcon.Draw(lines.length*0.5,0)
 EndFunction
 
-Function DrawImageTiled(image:TImage,x#=0,y#=0,frame=0)
+Function DrawImageTiled(image:TImage,x#=0,y#=0,frame:Int=0)
 	If Not VerifyD3D11Max2DDriver() Return
 	
 	Local iframe:TD3D11ImageFrame=TD3D11ImageFrame(image.Frame(frame))
 	If Not iframe Return
 
-	Local iw=image.width
-	Local ih=image.height
-	Local ox=_max2DGraphics.viewport_x-iw+1
-	Local oy=_max2DGraphics.viewport_y-ih+1
+	Local iw:Int=image.width
+	Local ih:Int=image.height
+	Local ox:Int=_max2DGraphics.viewport_x-iw+1
+	Local oy:Int=_max2DGraphics.viewport_y-ih+1
 	Local tx#=Floor(x+_max2DGraphics.origin_x-image.handle_x)-ox
 	Local ty#=Floor(y+_max2DGraphics.origin_y-image.handle_y)-oy
 
 	If tx>=0 tx=tx Mod iw + ox Else tx=iw - -tx Mod iw + ox
 	If ty>=0 ty=ty Mod ih + oy Else ty=ih - -ty Mod ih + oy
 
-	Local vw=_max2DGraphics.viewport_x+_max2DGraphics.viewport_w
-	Local vh=_max2DGraphics.viewport_y+_max2DGraphics.viewport_h
+	Local vw:Int=_max2DGraphics.viewport_x+_max2DGraphics.viewport_w
+	Local vh:Int=_max2DGraphics.viewport_y+_max2DGraphics.viewport_h
 
 	Local width# = vw - tx
 	Local height# = vh - ty
 
-	Local nx = Ceil((vw - tx) / iw)
-	Local ny = Ceil((vh - ty) / ih)
+	Local nx:Int = Ceil((vw - tx) / iw)
+	Local ny:Int = Ceil((vh - ty) / ih)
 
-	Local numtiles = nx*ny
+	Local numtiles:Int = nx*ny
 
-	Local buildbuffer = False
+	Local buildbuffer:Int = False
 	
 	If _tilearray.length <> 24*numtiles
 		'BUG FIX - Causes intermittent EAV if removed!
@@ -1435,14 +1435,14 @@ Function DrawImageTiled(image:TImage,x#=0,y#=0,frame=0)
 		buildbuffer = True
 	EndIf
 	
-	Local ii,jj
-	Local index
+	Local ii:Int,jj:Int
+	Local index:Int
 	Local ar#[]=_tilearray
 	Local u#=iframe._uscale * iw
 	Local v#=iframe._vscale * ih
 	
-	For Local ay = 0 Until ny
-		For Local ax = 0 Until nx
+	For Local ay:Int = 0 Until ny
+		For Local ax:Int = 0 Until nx
 			_tilearray[index + 0] = tx + ii
 			_tilearray[index + 1] = ty + jj
 			_tilearray[index + 2] = 0.0
@@ -1488,8 +1488,8 @@ Function DrawImageTiled(image:TImage,x#=0,y#=0,frame=0)
 		CreateBuffer(_tilebuffer,SizeOf(_tilearray),D3D11_USAGE_DYNAMIC,D3D11_BIND_VERTEX_BUFFER,D3D11_CPU_ACCESS_WRITE,_tilearray,"Tile Array")
 	EndIf
 
-	Local stride = 16
-	Local offset = 0
+	Local stride:Int = 16
+	Local offset:Int = 0
 	_currentsrv = iframe._srv
 	
 	_d3d11devcon.VSSetShader(_vertexshader,Null,0)

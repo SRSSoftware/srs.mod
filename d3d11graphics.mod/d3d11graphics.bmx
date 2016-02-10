@@ -1,4 +1,4 @@
-Strict
+SuperStrict
 
 Module SRS.D3D11Graphics
 

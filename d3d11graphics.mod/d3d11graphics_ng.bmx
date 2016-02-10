@@ -1,4 +1,4 @@
-Strict
+SuperStrict
 
 Import BRL.SystemDefault
 Import BRL.Graphics
@@ -14,7 +14,7 @@ Import "DeviceModeSettings.c"
 Private
 
 Extern
-Function Dx11Max2D_EnumDisplaySettings(iModeNum,pMode:Byte Ptr)
+Function Dx11Max2D_EnumDisplaySettings:Int(iModeNum:Int,pMode:Byte Ptr)
 EndExtern
 
 'Lag fix
@@ -33,36 +33,36 @@ Global _d3d11dev:ID3D11Device
 Global _d3d11devcon:ID3D11DeviceContext
 Global _query:ID3D11Query
 Global _release:TList
-Global _windowed
-Global _fps
-Global _d3d11Refs
-Global _featurelevel[1]
+Global _windowed:Int
+Global _fps:Int
+Global _d3d11Refs:Int
+Global _featurelevel:Int[1]
 
 Type TD3D11Release
 	Field unk:IUnknown_
 EndType
 
-Function D3D11WndProc:Byte Ptr( hwnd,MSG,wp,lp )"win32"
+Function D3D11WndProc:Byte Ptr( hwnd:Byte Ptr,MSG:Int,wp:Byte Ptr,lp:Byte Ptr )"win32"
 
 	bbSystemEmitOSEvent hwnd,MSG,wp,lp,Null
 	
 	Select MSG
 		Case WM_CLOSE
-			Return
+			Return 0
 		Case WM_SYSKEYDOWN
-			If wp<>KEY_F4 Return
+			If wp<>KEY_F4 Return 0
 		Case WM_SIZE	
 			EndSelect
 	Return DefWindowProcW( hwnd,MSG,wp,lp )
 End Function
 
-Function CreateD3D11Device()
+Function CreateD3D11Device:Int()
 	If _d3d11Refs
 		_d3d11Refs:+1
 		Return True
 	EndIf
 		
-	Local CreationFlag = D3D11_CREATE_DEVICE_SINGLETHREADED
+	Local CreationFlag:Int = D3D11_CREATE_DEVICE_SINGLETHREADED
 	'?DEBUG
 	'	CreationFlag :| D3D11_CREATE_DEVICE_DEBUG
 	'?
@@ -116,18 +116,18 @@ EndFunction
 
 Public
 
-Function D3D11GetFeatureLevel()
+Function D3D11GetFeatureLevel:Int()
 	Return _featurelevel[0]
 EndFunction
 
 Type TD3D11Graphics Extends TGraphics
-	Field _width
-	Field _height
-	Field _depth
-	Field _hertz
-	Field _flags
+	Field _width:Int
+	Field _height:Int
+	Field _depth:Int
+	Field _hertz:Int
+	Field _flags:Int
 	Field _hwnd:Byte Ptr
-	Field _attached
+	Field _attached:Int
 	Field _swapchain:IDXGISwapChain
 	Field _sd:DXGI_SWAP_CHAIN_DESC
 	Field _rendertargetview:ID3D11RenderTargetView
@@ -146,7 +146,7 @@ Type TD3D11Graphics Extends TGraphics
 	EndMethod
 	
 	'TGraphics
-	Method GetSettings( width Var,height Var,depth Var,hertz Var,flags Var)
+	Method GetSettings:Int( width:Int Var,height:Int Var,depth:Int Var,hertz:Int Var,flags:Int Var)
 		width = _width
 		height = _height
 		depth = _depth
@@ -155,8 +155,8 @@ Type TD3D11Graphics Extends TGraphics
 	EndMethod
 	
 	'TGraphics
-	Method Close()
-		If Not _hwnd Return
+	Method Close:Int()
+		If Not _hwnd Return 0
 	
 		If _swapchain _swapchain.SetFullScreenState False,Null
 		
@@ -171,11 +171,11 @@ Type TD3D11Graphics Extends TGraphics
 		_windowed = False
 	EndMethod
 	
-	Method Attach:TD3D11Graphics( hwnd:Byte Ptr ,flags )
-		Local rect[4]
+	Method Attach:TD3D11Graphics( hwnd:Byte Ptr ,flags:Int )
+		Local rect:Int[4]
 		GetClientRect hwnd,rect
-		Local width=rect[2]-rect[0]
-		Local height=rect[3]-rect[1]
+		Local width:Int = rect[2]-rect[0]
+		Local height:Int = rect[3]-rect[1]
 		
 		CreateD3D11Device()
 		CreateSwapChain(hwnd,width,height,0,0,flags)
@@ -189,7 +189,7 @@ Type TD3D11Graphics Extends TGraphics
 		Return Self
 	EndMethod
 	
-	Method Create:TD3D11Graphics(width,height,depth,hertz,flags)
+	Method Create:TD3D11Graphics(width:Int,height:Int,depth:Int,hertz:Int,flags:Int)
 		If _depth Return Null 'Already have a window thats full screen
 
 		'register wndclass
@@ -204,14 +204,14 @@ Type TD3D11Graphics Extends TGraphics
 		MemFree classname
 
 		'Create the window
-		Local wstyle = WS_VISIBLE|WS_POPUP
+		Local wstyle:Int = WS_VISIBLE|WS_POPUP
 
 		'centre window on screen
-		Local rect[4]
+		Local rect:Int[4]
 		If Not depth
 			wstyle = WS_VISIBLE|WS_CAPTION|WS_SYSMENU|WS_MINIMIZEBOX
 
-			Local desktoprect[4]
+			Local desktoprect:Int[4]
 
 			GetWindowRect( GetDesktopWindow() , desktoprect )
 
@@ -258,12 +258,12 @@ Type TD3D11Graphics Extends TGraphics
 		Return Self
 	EndMethod
 	
-	Method CreateSwapChain(hwnd:Byte Ptr,width,height,depth,hertz,flags)
+	Method CreateSwapChain(hwnd:Byte Ptr,width:Int,height:Int,depth:Int,hertz:Int,flags:Int)
 		Local FullScreenTarget:TGraphicsMode
-		Local numerator = 0
+		Local numerator:Int = 0
 
 		If depth
-			Local index
+			Local index:Int
 			For Local i:TGraphicsMode = EachIn GraphicsModes()
 				If width = i.Width
 					If height = i.height
@@ -304,9 +304,9 @@ Type TD3D11Graphics Extends TGraphics
 		Else
 			_sd.Windowed = True
 		EndIf
-					
+
 		_sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT
-		_sd.OutputWindow = Int hwnd
+		_sd.OutputWindow = hwnd
 		_sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD
 		_sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH
 		_sd.SampleDesc_Count = 1
@@ -355,7 +355,7 @@ Type TD3D11Graphics Extends TGraphics
 		_d3d11devcon.RSSetViewports(1,vp)
 	EndMethod
 	
-	Method Flip( sync )
+	Method Flip( sync:Int )
 		If sync
 			_swapchain.Present(1,0)
 		Else
@@ -367,7 +367,7 @@ Type TD3D11Graphics Extends TGraphics
 		Return _renderTargetView
 	EndMethod
 	
-	Method GetFeatureLevel()
+	Method GetFeatureLevel:Int()
 		Return _FeatureLevel[0]
 	EndMethod
 
@@ -384,7 +384,7 @@ Type TD3D11GraphicsDriver Extends TGraphicsDriver
 		Local _Adapter:IDXGIAdapter
 		Local _Output:IDXGIOutput
 		Local _Device:IDXGIDevice
-		Local _SupportLevels[]
+		Local _SupportLevels:Int[]
 		
 		If Not _d3d11 Return Null
 		If Not _DXGI Return Null
@@ -400,11 +400,11 @@ Type TD3D11GraphicsDriver Extends TGraphicsDriver
 		
 		'Use the native Windows API to get the correct number of display modes available
 		'Dx11 API is inconsistent with HDTVs
-		Local Mode[4]
-		Local ModeNum,Result = -1
+		Local Mode:Int[4]
+		Local ModeNum:Int,Result:Int = -1
 		
 		While Result <> 0
-			Local ModeFound = False	
+			Local ModeFound:Int = False	
 			Result = Dx11Max2D_EnumDisplaySettings(ModeNum,Mode)
 			
 			'Don't include duplicates
@@ -453,15 +453,15 @@ Type TD3D11GraphicsDriver Extends TGraphicsDriver
 		Return _modes
 	EndMethod
 	
-	Method AttachGraphics:TD3D11Graphics( hwnd:Byte Ptr , flags )
+	Method AttachGraphics:TD3D11Graphics( hwnd:Byte Ptr , flags:Int )
 		Return New TD3D11Graphics.Attach( hwnd , flags )
 	EndMethod
 	
-	Method CreateGraphics:TD3D11Graphics( width,height,depth,hertz,flags )
+	Method CreateGraphics:TD3D11Graphics( width:Int,height:Int,depth:Int,hertz:Int,flags:Int )
 		Return New TD3D11Graphics.Create(width,height,depth,hertz,flags)
 	EndMethod
 	
-	Method SetGraphics( g:TGraphics )
+	Method SetGraphics:Int( g:TGraphics )
 		_graphics = TD3D11Graphics( g )
 	
 		If _graphics
@@ -478,7 +478,7 @@ Type TD3D11GraphicsDriver Extends TGraphicsDriver
 		EndIf
 	EndMethod
 	
-	Method Flip( sync )
+	Method Flip:Int( sync:Int )
 		_graphics.Flip( sync )
 		
 		'Render lag fix
@@ -492,7 +492,7 @@ Type TD3D11GraphicsDriver Extends TGraphicsDriver
 EndType
 
 Function D3D11GraphicsDriver:TD3D11GraphicsDriver()
-	Global _doneD3D11
+	Global _doneD3D11:Int
 	If Not _doneD3D11
 		_driver = New TD3D11GraphicsDriver.Create()
 		If _driver _doneD3D11 = True
@@ -503,8 +503,8 @@ EndFunction
 
 
 'EXPERIMENTAL...............
-Function D3D11ShowAllSupportedFeatures(InFormat=0)
-	Function YesNo$(value)
+Function D3D11ShowAllSupportedFeatures(InFormat:Int=0)
+	Function YesNo$(value:Int)
 		If value Return "Yes"
 		Return "No"
 	EndFunction
@@ -546,7 +546,7 @@ Function D3D11ShowAllSupportedFeatures(InFormat=0)
 		WriteStdout "   ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x - "+YesNo(pD3D10XOptions.ComputeShaders_Plus_RawAndStructuredBuffers_Via_Shader_4_x)+"~n~n"
 	EndFunction
 	
-	Function CheckDataFormat(InFormat)
+	Function CheckDataFormat(InFormat:Int)
 		Local pFormatSupport:D3D11_FEATURE_DATA_FORMAT_SUPPORT = New D3D11_FEATURE_DATA_FORMAT_SUPPORT
 
 		pFormatSupport.InFormat = InFormat
@@ -561,7 +561,7 @@ Function D3D11ShowAllSupportedFeatures(InFormat=0)
 		WriteStdout EnumSupportFormat(pFormatSupport.OutFormatSupport)
 	EndFunction
 	
-	Function EnumSupportFormat$(Value)
+	Function EnumSupportFormat$(Value:Int)
 		Local Result$
 		
 		If Value & $1 Result =  "   D3D11_FORMAT_SUPPORT_BUFFER~n"

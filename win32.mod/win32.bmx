@@ -1,5 +1,5 @@
 
-Strict
+SuperStrict
 
 Module srs.win32
 
@@ -7,9 +7,9 @@ Module srs.win32
 
 Extern"Win32"
 Interface IUnknown_
-	Method QueryInterface(riid:Byte Ptr,ppIUnk:IUnknown_ Var)
-	Method AddRef()
-	Method Release_()
+	Method QueryInterface:Int(riid:Byte Ptr,ppIUnk:IUnknown_ Var)
+	Method AddRef:Int()
+	Method Release_:Int()
 EndInterface
 EndExtern
 
