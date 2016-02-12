@@ -362,15 +362,15 @@ Function CreateD3D11Max2DResources()
 	sd.MaxLOD = D3D11_FLOAT32_MAX
 
 	If _d3d11dev.CreateSamplerState(sd,_pointsamplerstate)<0
-		Notify "Cannot create point sampler state~nExiting.",True
-		End
+		WriteStdout "Cannot create point sampler state~nExiting.~n"
+		Return False
 	EndIf
 	
 	sd.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR
 	
 	If _d3d11dev.CreateSamplerState(sd,_linearsamplerstate)<0
-		Notify "Cannot create linear sampler state~nExiting.",True
-		End
+		WriteStdout "Cannot create linear sampler state~nExiting.~n"
+		Return False
 	EndIf
 	
 	_d3d11devcon.IASetInputLayout(_max2dlayout)
@@ -393,35 +393,51 @@ Function CreateD3D11Max2DResources()
 	_bd.RenderTarget0_DestBlendAlpha = D3D11_BLEND_ZERO
 	_bd.RenderTarget0_BlendOpAlpha = D3D11_BLEND_OP_ADD
 	_bd.RenderTarget0_RenderTargetWriteMask = D3D11_COLOR_WRITE_ENABLE_ALL
-	_d3d11dev.CreateBlendState(_bd,_solidblend)
+	If _d3d11dev.CreateBlendState(_bd,_solidblend)<0
+		WriteStdout "Cannot create solid blend state~n"
+		Return False
+	EndIf
 	
 	'Mask blend
 	_bd.RenderTarget0_BlendEnable = False
-	_d3d11dev.CreateBlendState(_bd,_maskblend)
+	If _d3d11dev.CreateBlendState(_bd,_maskblend)<0
+		WriteStdout "Cannot create mask blend state~n"
+		Return False
+	EndIf
 
 	'Alpha blend
 	_bd.RenderTarget0_BlendEnable = True
 	_bd.RenderTarget0_SrcBlend = D3D11_BLEND_SRC_ALPHA
 	_bd.RenderTarget0_DestBlend = D3D11_BLEND_INV_SRC_ALPHA
-	_d3d11dev.CreateBlendState(_bd,_alphablend)
+	If _d3d11dev.CreateBlendState(_bd,_alphablend)<0
+		WriteStdout "Cannot create alpha blend state~n"
+		Return False
+	EndIf
 	
 	'Light blend
 	_bd.RenderTarget0_BlendEnable = True
 	_bd.RenderTarget0_SrcBlend = D3D11_BLEND_SRC_ALPHA
 	_bd.RenderTarget0_DestBlend = D3D11_BLEND_ONE
-	_d3d11dev.CreateBlendState(_bd,_lightblend)
+	If _d3d11dev.CreateBlendState(_bd,_lightblend)<0
+		WriteStdout "Cannot create light blend state~n"
+		Return False
+	EndIf
 
 	'Shade blend
 	_bd.RenderTarget0_BlendEnable = True
 	_bd.RenderTarget0_SrcBlend = D3D11_BLEND_ZERO
 	_bd.RenderTarget0_DestBlend = D3D11_BLEND_SRC_COLOR
-	_d3d11dev.CreateBlendState(_bd,_shadeblend)
+	If _d3d11dev.CreateBlendState(_bd,_shadeblend)<0
+		WriteStdout "Cannot create shade blend state~n"
+		Return False
+	EndIf
 
 	_currblend = SOLIDBLEND
 	_currentrtv = _d3d11Graphics.GetRenderTarget()
 	
 	_shaderready = True
 	Return True
+
 EndFunction
 
 Function FreeD3D11Max2DResources()
@@ -744,6 +760,12 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 			TMax2DGraphics.ClearCurrent
 			D3D11GraphicsDriver().SetGraphics Null
 			
+			_pointarray = New Float[0]
+			_polyarray = New Float[0]
+			_ovalarray = New Float[0]
+			_linearray = New Float[0]
+			_tilearray = New Float[0]
+
 			Return
 		EndIf
 		

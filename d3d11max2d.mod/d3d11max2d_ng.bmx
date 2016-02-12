@@ -790,6 +790,12 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 			TMax2DGraphics.ClearCurrent
 			D3D11GraphicsDriver().SetGraphics Null
 			
+			_pointarray = New Float[0]
+			_polyarray = New Float[0]
+			_ovalarray = New Float[0]
+			_linearray = New Float[0]
+			_tilearray = New Float[0]
+			
 			Return False
 		EndIf
 		
