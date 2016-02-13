@@ -866,7 +866,7 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		Local r:Int = Max(Min(red,255),0)
 		Local g:Int = Max(Min(green,255),0)
 		Local b:Int = Max(Min(blue,255),0)
-		
+
 		_psflags[0] = OneOver255 *  r
 		_psflags[1] = OneOver255 *  g
 		_psflags[2] = OneOver255 *  b

@@ -17,13 +17,6 @@ Extern
 Function Dx11Max2D_EnumDisplaySettings:Int(iModeNum:Int,pMode:Byte Ptr)
 EndExtern
 
-'Lag fix
-Global _DwmapiDLL:Byte Ptr = LoadLibraryA("dwmapi.dll") 
-
-Global _FlushGPU()
-If _DwmapiDLL _FlushGPU = GetProcAddress(_DwmapiDLL,"DwmFlush")
-'end of lagfix
-
 Global _graphics:TD3D11Graphics
 Global _driver:TD3D11GraphicsDriver
 Global _wndclass$ = "BBDX11Device Window Class"
@@ -47,12 +40,18 @@ Function D3D11WndProc:Byte Ptr( hwnd:Byte Ptr,MSG:Int,wp:Byte Ptr,lp:Byte Ptr )"
 	bbSystemEmitOSEvent hwnd,MSG,wp,lp,Null
 	
 	Select MSG
-		Case WM_CLOSE
-			Return 0
-		Case WM_SYSKEYDOWN
-			If wp<>KEY_F4 Return 0
-		Case WM_SIZE	
-			EndSelect
+	Case WM_CLOSE
+		Return 0
+	Case WM_SYSKEYDOWN
+		If wp<>KEY_F4 Return 0
+
+	Case WM_ACTIVATE
+		If _graphics
+			_graphics.Reactivate()
+		EndIf
+		Return 0
+	EndSelect
+
 	Return DefWindowProcW( hwnd,MSG,wp,lp )
 End Function
 
@@ -299,11 +298,7 @@ Type TD3D11Graphics Extends TGraphics
 			_sd.BufferDesc_ScanlineOrdering = 0
 		EndIf
 
-		If depth
-			_sd.Windowed = False
-		Else
-			_sd.Windowed = True
-		EndIf
+		_sd.Windowed = _windowed
 
 		_sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT
 		_sd.OutputWindow = hwnd
@@ -323,7 +318,11 @@ Type TD3D11Graphics Extends TGraphics
 		If Factory.CreateSwapChain(_d3d11dev,_sd,_swapchain)<0
 			Throw "Critical Error!~nCannot create swap chain"
 		EndIf
-
+		
+		If depth
+			_swapchain.SetFullscreenState(True,Null)
+		EndIf
+		
 		Factory.MakeWindowAssociation(hwnd,DXGI_MWA_NO_WINDOW_CHANGES)
 		Device.Release_
 		Adapter.Release_
@@ -369,6 +368,12 @@ Type TD3D11Graphics Extends TGraphics
 	
 	Method GetFeatureLevel:Int()
 		Return _FeatureLevel[0]
+	EndMethod
+
+	Method Reactivate()
+		If Not _windowed
+			If _swapchain _swapchain.SetFullscreenState(True,Null)
+		EndIf
 	EndMethod
 
 	Method AddRelease(unk:IUnknown_)
@@ -485,7 +490,7 @@ Type TD3D11GraphicsDriver Extends TGraphicsDriver
 		If Not _windowed
 			_d3d11devcon.End_(_query)
 			Local queryData:Int
-			While _d3d11devcon.GetData(_query,Varptr queryData,SizeOf(queryData),0)<>0
+			While _d3d11devcon.GetData(_query,Varptr queryData,4,0) = 1
 			Wend
 		EndIf
 	EndMethod

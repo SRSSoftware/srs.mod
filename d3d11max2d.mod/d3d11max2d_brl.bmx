@@ -165,9 +165,6 @@ Function MapBuffer(Buffer:ID3D11Buffer Var,SubresourceIndex,MapType,MapFlags,Dat
 		Notify "Error! "+Name+"~nCannot map data for resources!~n"
 		End
 	Else
-		'For Local i = 0 Until Size
-		'	Map.pData[i] = Data[i]
-		'Next
 		MemCopy Map.pData,Data,Size
 		_d3d11devcon.UnMap(Buffer,SubresourceIndex)
 	EndIf
@@ -210,13 +207,13 @@ Function CreateD3D11Max2DResources()
 	Local rsdesc:D3D11_RASTERIZER_DESC = New D3D11_RASTERIZER_DESC
 	rsdesc.Fillmode = D3D11_FILL_SOLID
 	rsdesc.CullMode = D3D11_CULL_NONE
-	rsdesc.ScissorEnable = True
+	'rsdesc.ScissorEnable = True
 
 	If _d3d11dev.CreateRasterizerState(rsdesc,_rs)<0
 		WriteStdout "Cannot create rasterizer state~n"
 		Return
 	EndIf
-	
+
 	_d3d11devcon.RSSetScissorRects(1,[0,0,GraphicsWidth(),GraphicsHeight()])
 
 	_d3d11devcon.RSSetState(_rs)
@@ -434,7 +431,7 @@ Function CreateD3D11Max2DResources()
 
 	_currblend = SOLIDBLEND
 	_currentrtv = _d3d11Graphics.GetRenderTarget()
-	
+ 
 	_shaderready = True
 	Return True
 
@@ -855,7 +852,7 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 	EndMethod
 
 	Method SetViewport( x,y,width,height )
-		_d3d11devcon.RSSetScissorRects(1,[x,y,x+width,y+height])
+		'_d3d11devcon.RSSetScissorRects(1,[x,y,x+width,y+height])
 	EndMethod
 
 	Method SetTransform( xx#,xy#,yx#,yy# )
@@ -1255,7 +1252,6 @@ EndType
 
 Function D3D11Max2DDriver:TD3D11Max2DDriver()
 	Global _done
-	
 	If Not _done
 		_driver = Null
 		_driver=New TD3D11Max2DDriver.Create()
