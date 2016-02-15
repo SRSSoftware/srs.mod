@@ -77,9 +77,9 @@ EndType
 Incbin "max2D.vs"
 Incbin "max2D.ps"
 
-Function SAFE_RELEASE(interface:IUnknown Var)
-	If interface interface.Release_
-	interface = Null
+Function SAFE_RELEASE(Interface:IUnknown Var)
+	If Interface Interface.Release_
+	Interface = Null
 EndFunction
 
 Type TD3D11RingBuffer
@@ -852,7 +852,7 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 	EndMethod
 
 	Method SetViewport( x,y,width,height )
-		_d3d11devcon.RSSetScissorRects(1,[x,y,x+width,y+height])
+		'_d3d11devcon.RSSetScissorRects(1,[x,y,x+width,y+height])
 	EndMethod
 
 	Method SetTransform( xx#,xy#,yx#,yy# )
