@@ -853,7 +853,7 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 	EndMethod
 
 	Method SetViewport( x,y,width,height )
-		'_d3d11devcon.RSSetScissorRects(1,[x,y,x+width,y+height])
+		_d3d11devcon.RSSetScissorRects(1,[x,y,x+width,y+height])
 	EndMethod
 
 	Method SetTransform( xx#,xy#,yx#,yy# )
