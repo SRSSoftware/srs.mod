@@ -34,7 +34,6 @@ EndType
 
 Function D3D11WndProc( hwnd,MSG,wp,lp )"win32"
 	bbSystemEmitOSEvent hwnd,MSG,wp,lp,Null
-	Print msg
 	
 	Select MSG
 	Case WM_CLOSE
