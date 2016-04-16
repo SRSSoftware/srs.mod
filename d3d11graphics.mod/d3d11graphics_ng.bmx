@@ -37,7 +37,6 @@ EndType
 
 Function D3D11WndProc:Byte Ptr( hwnd:Byte Ptr,MSG:Int,wp:Byte Ptr,lp:Byte Ptr )"win32"
 	bbSystemEmitOSEvent hwnd,MSG,wp,lp,Null
-	Print msg
 
 	Select MSG
 	Case WM_CLOSE
