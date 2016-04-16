@@ -77,9 +77,9 @@ EndType
 Incbin "max2D.vs"
 Incbin "max2D.ps"
 
-Function SAFE_RELEASE(interface:IUnknown Var)
-	If interface interface.Release_
-	interface = Null
+Function SAFE_RELEASE(Interface:IUnknown Var)
+	If Interface Interface.Release_
+	Interface = Null
 EndFunction
 
 Type TD3D11RingBuffer
@@ -207,7 +207,8 @@ Function CreateD3D11Max2DResources()
 	Local rsdesc:D3D11_RASTERIZER_DESC = New D3D11_RASTERIZER_DESC
 	rsdesc.Fillmode = D3D11_FILL_SOLID
 	rsdesc.CullMode = D3D11_CULL_NONE
-	'rsdesc.ScissorEnable = True
+	rsdesc.ScissorEnable = True
+	rsdesc.DepthClipEnable = True
 
 	If _d3d11dev.CreateRasterizerState(rsdesc,_rs)<0
 		WriteStdout "Cannot create rasterizer state~n"
@@ -218,7 +219,7 @@ Function CreateD3D11Max2DResources()
 
 	_d3d11devcon.RSSetState(_rs)
 	_d3d11graphics.AddRelease _rs
-	
+
 	'create shaders
 	Local hr
 	Local vscode:ID3DBlob

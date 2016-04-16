@@ -36,19 +36,17 @@ Type TD3D11Release
 EndType
 
 Function D3D11WndProc:Byte Ptr( hwnd:Byte Ptr,MSG:Int,wp:Byte Ptr,lp:Byte Ptr )"win32"
-
 	bbSystemEmitOSEvent hwnd,MSG,wp,lp,Null
-	
+	Print msg
+
 	Select MSG
 	Case WM_CLOSE
 		Return 0
 	Case WM_SYSKEYDOWN
 		If wp<>KEY_F4 Return 0
-
+		
 	Case WM_ACTIVATE
-		If _graphics
-			_graphics.Reactivate()
-		EndIf
+		If _graphics _graphics.Reactivate(wp)
 		Return 0
 	EndSelect
 
@@ -370,9 +368,10 @@ Type TD3D11Graphics Extends TGraphics
 		Return _FeatureLevel[0]
 	EndMethod
 
-	Method Reactivate()
+	Method Reactivate(wp:Byte Ptr)
 		If Not _windowed
-			If _swapchain _swapchain.SetFullscreenState(True,Null)
+			If _swapchain _swapchain.SetFullscreenState(Int wp,Null)
+			If Not wp ShowWindow _hwnd,SW_MINIMIZE				
 		EndIf
 	EndMethod
 

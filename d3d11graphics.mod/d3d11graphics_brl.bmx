@@ -33,8 +33,8 @@ Type TD3D11Release
 EndType
 
 Function D3D11WndProc( hwnd,MSG,wp,lp )"win32"
-
 	bbSystemEmitOSEvent hwnd,MSG,wp,lp,Null
+	Print msg
 	
 	Select MSG
 	Case WM_CLOSE
@@ -43,11 +43,10 @@ Function D3D11WndProc( hwnd,MSG,wp,lp )"win32"
 		If wp<>KEY_F4 Return
 		
 	Case WM_ACTIVATE
-		If _graphics
-			_graphics.Reactivate()
-		EndIf
+		If _graphics _graphics.Reactivate(wp)
 		Return 0
 	EndSelect
+	
 	Return DefWindowProcW( hwnd,MSG,wp,lp )
 End Function
 
@@ -316,8 +315,11 @@ Type TD3D11Graphics Extends TGraphics
 		If depth
 			_swapchain.SetFullscreenState(True,Null)
 		EndIf
+		
+		_swapchain.ResizeTarget(_sd)
+		'_swapchain.ResizeBuffers(0,0,0,DXGI_FORMAT_UNKNOWN,0)
 
-		Factory.MakeWindowAssociation(hwnd,DXGI_MWA_NO_WINDOW_CHANGES)
+		'Factory.MakeWindowAssociation(hwnd,DXGI_MWA_NO_WINDOW_CHANGES)
 		Device.Release_
 		Adapter.Release_
 		Factory.Release_
@@ -364,9 +366,10 @@ Type TD3D11Graphics Extends TGraphics
 		Return _FeatureLevel[0]
 	EndMethod
 	
-	Method Reactivate()
+	Method Reactivate(wp)
 		If Not _windowed
-			If _swapchain _swapchain.SetFullscreenState(True,Null)
+			If _swapchain _swapchain.SetFullscreenState(wp,Null)
+			If Not wp ShowWindow _hwnd,SW_MINIMIZE				
 		EndIf
 	EndMethod	
 	
