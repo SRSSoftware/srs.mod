@@ -1350,7 +1350,7 @@ Function PlotPoints(points#[])
 	_d3d11devcon.IASetInputLayout(_max2dlayout)
 	_d3d11devcon.IASetVertexBuffers(0,1,Varptr _pointBuffer,Varptr stride,Varptr offset)
 	_d3d11devcon.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST)
-	_d3d11devcon.Draw(points.length*0.5,0)
+	_d3d11devcon.Draw(points.length/2,0)
 EndFunction
 
 Function DrawLines(lines#[],Linked:Int=False)
