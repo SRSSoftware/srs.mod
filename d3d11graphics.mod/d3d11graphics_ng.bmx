@@ -35,12 +35,13 @@ Type TD3D11Release
 	Field unk:IUnknown_
 EndType
 
-Function D3D11WndProc:Byte Ptr( hwnd:Byte Ptr,MSG:Int,wp:Byte Ptr,lp:Byte Ptr )"win32"
+Function D3D11WndProc:Byte Ptr( hwnd:Byte Ptr,MSG:UInt,wp:Byte Ptr,lp:Byte Ptr )"win32"
 	bbSystemEmitOSEvent hwnd,MSG,wp,lp,Null
 
 	Select MSG
 	Case WM_CLOSE
 		Return 0
+
 	Case WM_SYSKEYDOWN
 		If wp<>KEY_F4 Return 0
 		
