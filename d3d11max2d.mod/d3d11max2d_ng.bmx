@@ -1399,7 +1399,7 @@ Function DrawLines(lines#[],Linked:Int=False)
 	'LINESTRIP(=3) or LINELIST(=2)
 	_d3d11devcon.IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP-(linked=True))
 	_d3d11devcon.IASetVertexBuffers(0,1,Varptr _linebuffer,Varptr stride,Varptr offset)
-	_d3d11devcon.Draw(lines.length*0.5,0)
+	_d3d11devcon.Draw(lines.length/2,0)
 EndFunction
 
 Function DrawImageTiled(image:TImage,x#=0,y#=0,frame:Int=0)
