@@ -4,7 +4,8 @@ Import BRL.System
 Import "d3dcommon_brl.bmx"
 Import "d3dcompiler_common.bmx"
 
-Global _d3dcompiler = LoadLibraryA("d3dcompiler_43.dll")
+Global _d3dcompiler = LoadLibraryA("d3dcompiler_47.dll")
+If Not _d3dcompiler _d3dcompiler = LoadLibraryA("d3dcompiler_43.dll")
 If Not _d3dcompiler Return
 
 Global D3DCreateBlob(Size,ppBlob:ID3DBlob Var)"win32" = GetProcAddress(_d3dcompiler,"D3DCreateBlob")

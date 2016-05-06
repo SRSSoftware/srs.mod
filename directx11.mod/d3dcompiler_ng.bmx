@@ -29,7 +29,8 @@ Const D3DCOMPILE_WARNINGS_ARE_ERRORS:Int            = ( 1 Shl 18)
 Const D3DCOMPILE_EFFECT_CHILD_EFFECT:Int              = ( 1 Shl 0)
 Const D3DCOMPILE_EFFECT_ALLOW_SLOW_OPS:Int            = ( 1 Shl 1)
 
-Global _d3dcompiler:Byte Ptr = LoadLibraryW("d3dcompiler_43.dll")
+Global _d3dcompiler:Byte Ptr = LoadLibraryW("d3dcompiler_47.dll")
+If Not _d3dcompiler _d3dcompiler = LoadLibraryW("d3dcompiler_43.dll")
 If Not _d3dcompiler Return False
 
 Global D3DCreateBlob:Int(Size:Int,ppBlob:ID3DBlob Var)"win32" = GetProcAddress(_d3dcompiler,"D3DCreateBlob")
