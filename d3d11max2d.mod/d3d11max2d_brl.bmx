@@ -21,7 +21,6 @@ Const OneOver255# = 1.0 / 255.0
 Global _max2dshaders:TD3D11Max2DShaders
 Global _d3d11dev:ID3D11Device
 Global _d3d11devcon:ID3D11DeviceContext
-Global _currentrtv:ID3D11RenderTargetView
 Global _driver:TD3D11Max2DDriver
 Global _d3d11graphics:TD3D11Graphics
 Global _max2DGraphics:TMax2DGraphics
@@ -431,7 +430,6 @@ Function CreateD3D11Max2DResources()
 	EndIf
 
 	_currblend = SOLIDBLEND
-	_currentrtv = _d3d11Graphics.GetRenderTarget()
  
 	_shaderready = True
 	Return True
@@ -776,8 +774,6 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 		_d3d11devcon = _d3d11Graphics.GetDirect3DDeviceContext()
 		
 		D3D11GraphicsDriver().SetGraphics _d3d11Graphics
-		_currentrtv = _d3d11graphics.GetRenderTarget()
-
 		CreateD3D11Max2DResources
 
 		_max2DGraphics.MakeCurrent
@@ -868,7 +864,10 @@ Type TD3D11Max2DDriver Extends TMax2DDriver
 	EndMethod
 
 	Method Cls()
-		_d3d11devcon.ClearRenderTargetView( _currentrtv , _clscolor )
+		Local rtv:ID3D11RenderTargetView
+		_d3d11devcon.OMGetRenderTargets(1, Varptr rtv, Null)
+		_d3d11devcon.ClearRenderTargetView( rtv , _clscolor )
+		rtv.release_
 	EndMethod
 
 	Method Plot( x#,y# )

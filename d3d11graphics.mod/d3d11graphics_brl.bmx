@@ -357,10 +357,6 @@ Type TD3D11Graphics Extends TGraphics
 		EndIf
 	EndMethod
 	
-	Method GetRenderTarget:ID3D11RenderTargetView()
-		Return _renderTargetView
-	EndMethod
-	
 	Method GetFeatureLevel()
 		Return _FeatureLevel[0]
 	EndMethod

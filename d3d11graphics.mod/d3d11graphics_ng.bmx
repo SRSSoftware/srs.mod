@@ -359,11 +359,7 @@ Type TD3D11Graphics Extends TGraphics
 			_swapchain.Present(0,0)
 		EndIf
 	EndMethod
-	
-	Method GetRenderTarget:ID3D11RenderTargetView()
-		Return _renderTargetView
-	EndMethod
-	
+
 	Method GetFeatureLevel:Int()
 		Return _FeatureLevel[0]
 	EndMethod
