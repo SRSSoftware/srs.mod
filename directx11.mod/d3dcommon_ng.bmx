@@ -1,6 +1,6 @@
 SuperStrict
 
-Import SRS.Win32
+Import Pub.Win32
 Import "d3dcommon_common.bmx"
 
 Extern "win32"

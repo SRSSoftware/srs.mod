@@ -1,6 +1,6 @@
 SuperStrict 
 
-Import srs.Win32
+Import Pub.Win32
 
 Import "dxgi_ng.bmx"
 Import "d3dcommon_ng.bmx"

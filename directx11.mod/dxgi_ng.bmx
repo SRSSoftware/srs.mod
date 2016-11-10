@@ -1,6 +1,5 @@
 SuperStrict
 
-Import SRS.Win32
 Import Pub.Win32
 Import BRL.System
 

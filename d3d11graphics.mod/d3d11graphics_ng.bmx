@@ -4,7 +4,6 @@ Import BRL.SystemDefault
 Import BRL.Graphics
 Import BRL.LinkedList
 Import BRL.Retro
-Import SRS.Win32
 Import PUB.Win32
 Import SRS.DirectX11
 
@@ -35,7 +34,7 @@ Type TD3D11Release
 	Field unk:IUnknown_
 EndType
 
-Function D3D11WndProc:Byte Ptr( hwnd:Byte Ptr,MSG:UInt,wp:Byte Ptr,lp:Byte Ptr )"win32"
+Function D3D11WndProc:Byte Ptr( hwnd:Byte Ptr,MSG:UInt,wp:wparam,lp:lparam )"win32"
 	bbSystemEmitOSEvent hwnd,MSG,wp,lp,Null
 
 	Select MSG
@@ -364,7 +363,7 @@ Type TD3D11Graphics Extends TGraphics
 		Return _FeatureLevel[0]
 	EndMethod
 
-	Method Reactivate(wp:Byte Ptr)
+	Method Reactivate(wp:wparam)
 		If Not _windowed
 			If _swapchain _swapchain.SetFullscreenState(Int wp,Null)
 			If Not wp ShowWindow _hwnd,SW_MINIMIZE				
